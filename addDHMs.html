@@ -67,13 +67,26 @@
 </div>
 <script>
     const STORAGE_KEY = 'saved_gift_codes';
-    // 你的 Cloudflare Worker API 網址
     const CLOUDFLARE_API = 'https://api.xpxc.qzz.io'; 
 
-    window.onload = function() {
-        const savedCodes = localStorage.getItem(STORAGE_KEY);
-        if (savedCodes) {
-            document.getElementById('codes').value = savedCodes;
+    window.onload = async function() {
+        // 1. 先從瀏覽器本地抓 (墊檔用)
+        const localData = localStorage.getItem(STORAGE_KEY);
+        if (localData) document.getElementById('codes').value = localData;
+
+        // 2. 同時從資料庫抓取最新的禮包碼 (覆蓋本地資料以確保同步)
+        try {
+            const response = await fetch(CLOUDFLARE_API);
+            if (response.ok) {
+                const dbCodes = await response.json(); // 這會得到一個陣列
+                if (dbCodes && dbCodes.length > 0) {
+                    const codeText = dbCodes.join('\n');
+                    document.getElementById('codes').value = codeText;
+                    localStorage.setItem(STORAGE_KEY, codeText); // 同步回本地
+                }
+            }
+        } catch (error) {
+            console.error("無法載入資料庫資料:", error);
         }
     };
 
@@ -83,23 +96,19 @@
         
         if (lines.length === 0) return alert("請輸入禮包碼");
 
-        // 1. 儲存到本地瀏覽器紀錄
         localStorage.setItem(STORAGE_KEY, text);
 
-        // 2. 背景發送到你的 Cloudflare D1 資料庫 (紀錄備份)
-        // 這樣就算外部伺服器掛了，你的 D1 裡還是有存
+        // 背景發送到 D1 備份
         sendToCloudflare(lines);
 
-        // 3. 執行原本的提交邏輯 (不可更改的部分)
+        // 原本的 47.96.230.2 提交邏輯
         const joined = lines.join('@==');
         const url = `http://47.96.230.2:9997/qqyxNew/addDHM?dhm=${encodeURIComponent(joined)}`;
         window.open(url, '_blank');
     }
 
-    // 新增的後端備份函數
     async function sendToCloudflare(codeArray) {
         try {
-            // 這裡採用逐條發送，確保每一條禮包碼都被獨立紀錄
             for (const giftCode of codeArray) {
                 await fetch(CLOUDFLARE_API, {
                     method: 'POST',
@@ -107,13 +116,10 @@
                     body: JSON.stringify({ code: giftCode })
                 });
             }
-            console.log("Cloudflare D1 備份成功");
         } catch (error) {
-            console.error("Cloudflare 備份失敗:", error);
+            console.error("備份失敗:", error);
         }
     }
 </script>
-
-
 </body>
 </html>
