@@ -65,9 +65,10 @@
     <button onclick="submit()">提交並更新紀錄</button>
     <p class="footer">※ 紀錄儲存在瀏覽器中</p>
 </div>
-
 <script>
     const STORAGE_KEY = 'saved_gift_codes';
+    // 你的 Cloudflare Worker API 網址
+    const CLOUDFLARE_API = 'https://api.xpxc.qzz.io'; 
 
     window.onload = function() {
         const savedCodes = localStorage.getItem(STORAGE_KEY);
@@ -76,19 +77,43 @@
         }
     };
 
-    function submit() {
+    async function submit() {
         const text = document.getElementById('codes').value;
-        localStorage.setItem(STORAGE_KEY, text);
-        
         const lines = text.split('\n').map(s => s.trim()).filter(s => s !== "");
+        
         if (lines.length === 0) return alert("請輸入禮包碼");
 
+        // 1. 儲存到本地瀏覽器紀錄
+        localStorage.setItem(STORAGE_KEY, text);
+
+        // 2. 背景發送到你的 Cloudflare D1 資料庫 (紀錄備份)
+        // 這樣就算外部伺服器掛了，你的 D1 裡還是有存
+        sendToCloudflare(lines);
+
+        // 3. 執行原本的提交邏輯 (不可更改的部分)
         const joined = lines.join('@==');
         const url = `http://47.96.230.2:9997/qqyxNew/addDHM?dhm=${encodeURIComponent(joined)}`;
-        
         window.open(url, '_blank');
     }
+
+    // 新增的後端備份函數
+    async function sendToCloudflare(codeArray) {
+        try {
+            // 這裡採用逐條發送，確保每一條禮包碼都被獨立紀錄
+            for (const giftCode of codeArray) {
+                await fetch(CLOUDFLARE_API, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: giftCode })
+                });
+            }
+            console.log("Cloudflare D1 備份成功");
+        } catch (error) {
+            console.error("Cloudflare 備份失敗:", error);
+        }
+    }
 </script>
+
 
 </body>
 </html>
