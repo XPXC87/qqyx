@@ -24,22 +24,41 @@
 
 <script>
     const CLOUDFLARE_API = 'https://xpxc.qzz.io/api'; 
+    // 安全密鑰：必須與你 Worker 裡的 SECRET 變數完全一致
+    const SECRET = "XPXC87"; 
 
-    // 網頁開啟時，直接從 D1 資料庫讀取
+    // 生成安全 Header 的工具函數
+    function getAuthHeaders() {
+        const timestamp = Math.floor(Date.now() / 1000).toString();
+        // 簡單簽名邏輯：btoa(密鑰 + 時間戳)
+        const signature = btoa(SECRET + timestamp);
+        return {
+            'Content-Type': 'application/json',
+            'X-Timestamp': timestamp,
+            'X-Signature': signature
+        };
+    }
+
+    // 網頁開啟時，從 D1 資料庫讀取
     window.onload = async function() {
         const textarea = document.getElementById('codes');
         try {
-            const response = await fetch(CLOUDFLARE_API);
+            const response = await fetch(CLOUDFLARE_API, {
+                method: 'GET',
+                headers: getAuthHeaders() // 加入時間校驗頭
+            });
+
             if (response.ok) {
                 const dbCodes = await response.json();
-                // 如果有資料，直接顯示在輸入框內
                 if (dbCodes && dbCodes.length > 0) {
                     textarea.value = dbCodes.join('\n');
                 }
+            } else {
+                textarea.placeholder = "同步失敗：身分驗證未通過";
             }
         } catch (error) {
-    textarea.placeholder = "同步失敗：" + error.message; // 這樣能看到是網路斷了還是被擋了
-}
+            textarea.placeholder = "同步失敗：" + error.message;
+        }
     };
 
     async function submit() {
@@ -48,16 +67,21 @@
         
         if (lines.length === 0) return alert("請輸入禮包碼");
 
-        // 1. 同步到 Cloudflare D1 紀錄內容
-        for (const giftCode of lines) {
-            fetch(CLOUDFLARE_API, {
+        // 1. 同步到 Cloudflare D1 (現在會先清空再存入最新的一筆)
+        // 注意：我們只取第一行或全部合併後存入，依你 Worker 的 DELETE 邏輯而定
+        // 這裡維持你原本的迴圈邏輯，但建議只發送一次請求以節省資源
+        try {
+            const giftCode = lines.join('\n'); // 抓取全部內容一次存入
+            await fetch(CLOUDFLARE_API, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(), // 加入時間校驗頭
                 body: JSON.stringify({ code: giftCode })
             });
+        } catch (e) {
+            console.error("D1 同步失敗", e);
         }
 
-        // 2. 執行原本不可變動的提交邏輯
+        // 2. 執行原本不可變動的提交邏輯 (跳轉到後台 API)
         const joined = lines.join('@==');
         const url = `http://47.96.230.2:9997/qqyxNew/addDHM?dhm=${encodeURIComponent(joined)}`;
         window.open(url, '_blank');
