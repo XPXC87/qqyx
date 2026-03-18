@@ -1,39 +1,78 @@
-/**
- * 禮包碼同步終端 - 前端邏輯
- * 功能：同步 D1 資料庫 + 本地直接發射 HTTP 請求
- */
-
 const WORKER_URL = 'https://xpxc.qzz.io/api';
-const TARGET_API = 'http://47.96.230.2:9997/qqyxNew/addDHM';
 
-// 1. 頁面載入：自動從雲端同步最後一筆資料
+// 初始化：從雲端抓取資料
 window.onload = async () => {
+    updateLineCount();
     const textarea = document.getElementById('codes');
     const statusBox = document.getElementById('status-box');
     const statusContent = document.getElementById('status-content');
 
-    console.log("⚡ 終端啟動：正在聯繫雲端節點...");
-
     try {
-        const res = await fetch(WORKER_URL, { method: 'GET' });
+        const res = await fetch(WORKER_URL);
         const data = await res.json();
-        
         if (data.code) {
-            // 將 D1 的逗號格式轉回換行顯示
             textarea.value = data.code.split(',').filter(s => s.trim() !== "").join('\n');
             updateLineCount();
-            console.log("✅ 雲端同步成功");
         }
     } catch (e) {
-        console.warn("⚠️ 雲端連線失敗，改用本地快取");
         const local = localStorage.getItem('gift_codes');
         if (local) textarea.value = local;
         updateLineCount();
     }
 };
 
-// 2. 核心發送函數
+// 提交資料
 async function submitData() {
+    const textarea = document.getElementById('codes');
+    const statusBox = document.getElementById('status-box');
+    const statusContent = document.getElementById('status-content');
+    const submitBtn = document.getElementById('submitBtn');
+
+    const content = textarea.value.trim();
+    if (!content) return alert("❌ 請輸入內容");
+
+    submitBtn.disabled = true;
+    statusBox.style.display = "block";
+    statusContent.innerHTML = "<span style='color:#888'>[SYSTEM] 正在封裝數據包...</span>";
+
+    const csvFormat = content.split('\n').map(s => s.trim()).filter(s => s !== "").join(',');
+
+    try {
+        const response = await fetch(WORKER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: csvFormat })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            statusContent.innerHTML = `<span style='color:#fff'>[SUCCESS] 同步完成</span><br>[SERVER] ${result.backendResponse}`;
+            localStorage.setItem('gift_codes', content);
+        } else {
+            statusContent.innerHTML = `<span style='color:#ff4444'>[ERROR] ${result.error}</span>`;
+        }
+    } catch (err) {
+        statusContent.innerHTML = `<span style='color:#ff4444'>[FATAL] 通訊失敗: ${err.message}</span>`;
+    } finally {
+        submitBtn.disabled = false;
+    }
+}
+
+function updateLineCount() {
+    const text = document.getElementById('codes').value;
+    const lines = text.split('\n').filter(line => line.trim() !== '').length;
+    document.getElementById('line-count').innerText = `${lines} 行`;
+}
+
+function clearAll() {
+    if (confirm("🗑️ 確定要清空嗎？")) {
+        document.getElementById('codes').value = "";
+        localStorage.removeItem('gift_codes');
+        updateLineCount();
+        document.getElementById('status-box').style.display = "none";
+    }
+}
     const textarea = document.getElementById('codes');
     const statusBox = document.getElementById('status-box');
     const statusContent = document.getElementById('status-content');
