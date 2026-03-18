@@ -1,12 +1,8 @@
 const WORKER_URL = 'https://xpxc.qzz.io/api';
 
-// 初始化：載入時自動同步雲端 D1
 window.onload = async () => {
     updateLineCount();
     const textarea = document.getElementById('codes');
-    const statusBox = document.getElementById('status-box');
-    const statusContent = document.getElementById('status-content');
-
     try {
         const res = await fetch(WORKER_URL);
         const data = await res.json();
@@ -21,22 +17,19 @@ window.onload = async () => {
     }
 };
 
-// 提交資料：發送給 Worker 處理
 async function submitData() {
     const textarea = document.getElementById('codes');
     const statusBox = document.getElementById('status-box');
     const statusContent = document.getElementById('status-content');
     const submitBtn = document.getElementById('submitBtn');
 
-    const content = textarea.value.trim();
-    if (!content) return alert("❌ 請先輸入禮包碼");
+    if (!textarea.value.trim()) return alert("❌ 請輸入內容");
 
     submitBtn.disabled = true;
     statusBox.style.display = "block";
-    statusContent.innerHTML = "<span style='color:#888'>[SYSTEM] 正在封裝數據包...</span>";
+    statusContent.innerHTML = "[SYSTEM] 數據發送中...";
 
-    // 格式轉換：換行 -> 逗號
-    const csvFormat = content.split('\n').map(s => s.trim()).filter(s => s !== "").join(',');
+    const csvFormat = textarea.value.split('\n').map(s => s.trim()).filter(s => s !== "").join(',');
 
     try {
         const response = await fetch(WORKER_URL, {
@@ -48,13 +41,17 @@ async function submitData() {
         const result = await response.json();
 
         if (result.success) {
-            statusContent.innerHTML = `<span style='color:#fff'>[SUCCESS] 同步完成</span><br>[SERVER] ${result.backendResponse}`;
-            localStorage.setItem('gift_codes', content);
+            // 直接顯示後端抓回來的內容
+            statusContent.innerHTML = `[SUCCESS] 同步完成<br>[SERVER] ${result.backendResponse}`;
+            statusContent.style.color = "#fff";
+            localStorage.setItem('gift_codes', textarea.value);
         } else {
-            statusContent.innerHTML = `<span style='color:#ff4444'>[ERROR] ${result.error}</span>`;
+            statusContent.innerHTML = `[ERROR] ${result.error}`;
+            statusContent.style.color = "#ff4444";
         }
     } catch (err) {
-        statusContent.innerHTML = `<span style='color:#ff4444'>[FATAL] 通訊失敗: ${err.message}</span>`;
+        statusContent.innerHTML = `[FATAL] 網絡中斷: ${err.message}`;
+        statusContent.style.color = "#ff4444";
     } finally {
         submitBtn.disabled = false;
     }
