@@ -1,39 +1,73 @@
-const API_URL = 'http://xpxc.qzz.io/api';
+const API_URL = 'http://xpxc.qzz.io/api'; // 這是你的 Cloudflare Worker (D1 儲存用)
+const TARGET_API = 'http://47.96.230.2:9997/qqyxNew/addDHM'; // 這是目標 API
 
-// 1. 頁面載入：維持原本的雲端讀取邏輯
+// 頁面載入：從 D1 讀取資料並顯示
 window.onload = async () => {
+    const codesArea = document.getElementById('codes');
     const localData = localStorage.getItem('gift_codes');
-    if (localData) document.getElementById('codes').value = localData;
+    if (localData) codesArea.value = localData;
 
     try {
         const r = await fetch(API_URL);
         const d = await r.json();
         if (d.code) {
+            // 資料庫存逗號，前端轉回換行
             const formatted = d.code.split(',').filter(s => s !== "").join('\n');
-            document.getElementById('codes').value = formatted;
+            codesArea.value = formatted;
             localStorage.setItem('gift_codes', formatted);
         }
-    } catch (e) { console.log("雲端讀取失敗"); }
+    } catch (e) { console.log("雲端讀取失敗，使用本地數據"); }
 };
 
-// 2. 核心提交：雙軌同步
+// 核心功能：本地直接請求 + 雲端備份
 async function submitData() {
-    const content = document.getElementById('codes').value.trim();
+    const textarea = document.getElementById('codes');
+    const content = textarea.value.trim();
     const status = document.getElementById('status');
     
     if (!content) return alert("請輸入禮包碼");
 
     status.style.display = "block";
-    status.innerText = "正在同步雲端並發送 API...";
+    status.innerText = "🚀 正在本地發送並同步雲端...";
     status.style.color = "#007bff";
 
-    // --- 第一軌：存入 D1 資料庫 (CSV 格式) ---
-    const csvFormat = content.split('\n').map(s => s.trim()).filter(s => s !== "").join(',');
+    // 1. 準備格式
+    const codesArray = content.split('\n').map(s => s.trim()).filter(s => s !== "");
+    const csvFormat = codesArray.join(',');      // 存資料庫用
+    const apiFormat = codesArray.join('@==');    // 發送 API 用
+
+    // 2. 備份到雲端 D1 (背景執行，不影響使用者)
+    fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: csvFormat })
+    }).catch(e => console.log("雲端備份失敗"));
+
     localStorage.setItem('gift_codes', content);
 
-    try {
-        await fetch(API_URL, {
-            method: 'POST',
+    // 3. 【核心修正】本地直接請求 API
+    // 使用 Image Beacon (圖片撞擊法)，這是繞過 CORS 最穩的方法
+    const finalUrl = `${TARGET_API}?dhm=${encodeURIComponent(apiFormat)}`;
+    
+    const img = new Image();
+    img.src = finalUrl; 
+
+    // 因為 Image 只要 src 賦值就會發出 GET 請求
+    // 我們給予一個成功的視覺回饋
+    setTimeout(() => {
+        status.innerText = "✅ 提交指令已從本地送出！";
+        status.style.color = "#28a745";
+    }, 1000);
+}
+
+// 清空功能
+function clearAll() {
+    if(confirm("確定要清空嗎？")) {
+        document.getElementById('codes').value = "";
+        localStorage.removeItem('gift_codes');
+        status.innerText = "已清空本地快取";
+    }
+}
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ code: csvFormat })
         });
