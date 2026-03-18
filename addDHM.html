@@ -3,105 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>禮包碼同步工具</title>
+    <title>禮包碼管理工具</title>
     <link rel="stylesheet" href="css/style.css">
-    <style>
-        /* 簡單補一下樣式防止 CSS 沒抓到太醜 */
-        .card { padding: 20px; max-width: 500px; margin: auto; }
-        textarea { width: 100%; height: 200px; margin-bottom: 10px; }
-        .btn-group button { padding: 10px 20px; cursor: pointer; }
-        #status { margin-top: 15px; font-weight: bold; display: none; }
-    </style>
 </head>
 <body>
 
 <div class="card">
-    <h3>🚀 禮包碼雲端同步 (本地直發版)</h3>
-    <textarea id="codes" placeholder="一組一行..."></textarea>
+    <h2>禮包碼同步工具</h2>
+    <textarea id="codes" placeholder="一組禮包碼一行..."></textarea>
     
     <div class="btn-group">
-        <button id="submitBtn" onclick="submitData()">提交並同步 API</button>
-        <button onclick="clearAll()">清空內容</button>
+        <button onclick="submitData()">提交並發送</button>
+        <button class="btn-clear" onclick="clearAll()">清空</button>
     </div>
     
-    <div id="status"></div>
+    <div id="status" style="display:none; margin-top:15px; font-weight:bold;"></div>
 </div>
 
-<script>
-    // 設定你的網址
-    const WORKER_URL = 'http://xpxc.qzz.io/api'; // 注意改回 http
-    const TARGET_API = 'http://47.96.230.2:9997/qqyxNew/addDHM';
-
-    // 1. 自動讀取資料
-    window.onload = async () => {
-        console.log("頁面已載入，開始讀取資料...");
-        const textarea = document.getElementById('codes');
-        
-        // 先看本地有沒有
-        const local = localStorage.getItem('gift_codes');
-        if (local) textarea.value = local;
-
-        try {
-            const res = await fetch(WORKER_URL);
-            const data = await res.json();
-            if (data.code) {
-                const formatted = data.code.split(',').join('\n');
-                textarea.value = formatted;
-                localStorage.setItem('gift_codes', formatted);
-            }
-        } catch (e) {
-            console.log("讀取 D1 失敗:", e);
-        }
-    };
-
-    // 2. 提交函數
-    async function submitData() {
-        console.log("按鈕被點擊了！");
-        const textarea = document.getElementById('codes');
-        const status = document.getElementById('status');
-        const content = textarea.value.trim();
-
-        if (!content) {
-            alert("請輸入禮包碼");
-            return;
-        }
-
-        status.style.display = "block";
-        status.innerText = "處理中...";
-        status.style.color = "blue";
-
-        // A. 處理格式
-        const codesArray = content.split('\n').map(s => s.trim()).filter(s => s !== "");
-        const csvFormat = codesArray.join(',');      // D1 用
-        const apiFormat = codesArray.join('@==');    // API 用
-
-        // B. 同步到 D1 (背景執行)
-        fetch(WORKER_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: csvFormat })
-        }).catch(err => console.log("同步 D1 失敗"));
-
-        // C. 本地直發 API (隱形撞擊)
-        const finalUrl = `${TARGET_API}?dhm=${encodeURIComponent(apiFormat)}`;
-        console.log("準備發送至:", finalUrl);
-
-        const img = new Image();
-        img.src = finalUrl; 
-
-        // 更新 UI
-        localStorage.setItem('gift_codes', content);
-        status.innerText = "✅ 請求已從本地送出 (HTTP模式)";
-        status.style.color = "green";
-    }
-
-    function clearAll() {
-        if(confirm("確定清空？")) {
-            document.getElementById('codes').value = "";
-            localStorage.removeItem('gift_codes');
-        }
-    }
-</script>
-
+<script src="js/script.js"></script>
 </body>
 </html>
