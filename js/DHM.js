@@ -54,8 +54,7 @@ async function submitData() {
         } catch (e) {
             statusContent.innerHTML += `<br><span style='color:#ffaa00'>[提醒] 瀏覽器已阻擋本地儲存，下次重新整理頁面可能需重新讀取。</span>`;
         }
-        // ----------------------------
-        
+
     } catch (err) {
         statusContent.innerHTML = `<span style='color:#ff4444'>[錯誤] 寫入失敗: ${err.message}</span>`;
     } finally {
