@@ -2,19 +2,23 @@ const WORKER_URL = 'https://xpxc.qzz.io/api';
 const TARGET_API = 'http://47.96.230.2:9997/qqyxNew/addDHM';
 
 window.onload = async () => {
-//    updateLineCount();
     const textarea = document.getElementById('codes');
     try {
         const res = await fetch(WORKER_URL);
         const data = await res.json();
         if (data.code) {
+            // 將逗號轉回換行並填入
             textarea.value = data.code.split(',').join('\n');
-            updateLineCount();
         }
     } catch (e) {
+        // 如果 Worker 連不上，讀取本地存檔
         const local = localStorage.getItem('gift_codes');
-        if (local) textarea.value = local;
+        if (local) {
+            textarea.value = local;
+        }
     }
+    // 關鍵：無論是從 Worker 抓還是從本地抓，最後都跑一次行數計算
+    updateLineCount(); 
 };
 
 async function submitData() {
