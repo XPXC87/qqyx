@@ -1,4 +1,4 @@
-wconst WORKER_URL = 'https://xpxc.qzz.io/api';
+const WORKER_URL = 'https://xpxc.qzz.io/api';
 const TARGET_API = 'http://47.96.230.2:9997/qqyxNew/addDHM';
 
 window.onload = async () => {
@@ -28,7 +28,7 @@ async function submitData() {
 
     submitBtn.disabled = true;
     statusBox.style.display = "block";
-    statusContent.innerHTML = "[系統日誌] 正在處理資料並寫入 API...";
+    statusContent.innerHTML = "[系統] 正在處理資料並寫入 API...";
 
     const csvFormat = content.split('\n').map(s => s.trim()).filter(s => s !== "").join(',');
     const apiFormat = csvFormat.split(',').join('@==');
@@ -46,11 +46,11 @@ async function submitData() {
         const resultText = await response.text();
 
         // 顯示結果，例如「添加成功」
-        statusContent.innerHTML = `<span style='color:#fff'>[成功] 操作完成</span><br>[服務器回傳]:${resultText.trim() || "無回傳文字"}`;
+        statusContent.innerHTML = `<span style='color:#00ff00'>[成功] 操作完成</span><br>[服務器回傳]: ${resultText.trim() || "無回傳文字"}`;
         localStorage.setItem('gift_codes', content);
         
     } catch (err) {
-        statusContent.innerHTML = `<span style='color:#ff4444'>[錯誤] 寫入失敗: ${err.message}</span><br>`;
+        statusContent.innerHTML = `<span style='color:#ff4444'>[錯誤] 寫入失敗: ${err.message}</span>`;
     } finally {
         submitBtn.disabled = false;
     }
