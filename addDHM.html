@@ -2,27 +2,48 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>禮包碼同步終端</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+
 <div class="container">
     <div class="header">
         <h1><span>⚡</span> 禮包碼同步終端</h1>
-        <p>TERMINAL v4.0 // BY XPXC</p>
+        <p>TERMINAL v5.0 // BY XPXC</p>
     </div>
+
     <div class="main-card">
+        <div class="input-header">
+            <span>📝 輸入區域</span>
+            <span id="line-count">0 行</span>
+        </div>
+        
         <textarea id="codes" placeholder="請輸入禮包碼，一組一行..." oninput="updateLineCount()"></textarea>
+
         <div class="action-group">
-            <button class="btn-primary" onclick="submitAndOpen()">🚀 同步並跳轉 API</button>
-            <button class="btn-secondary" onclick="clearAll()">🗑️ 清除</button>
+            <button id="submitBtn" class="btn-primary" onclick="submitData()">
+                <span class="icon">🚀</span> 執行同步與寫入
+            </button>
+            <button class="btn-secondary" onclick="clearAll()">
+                <span class="icon">🗑️</span> 清除
+            </button>
         </div>
+
         <div id="status-box" class="status-box" style="display:none;">
-            <div id="status-content">正在同步雲端資料...</div>
+            <div class="status-header">
+                <span class="pulse"></span> 系統回饋
+            </div>
+            <div id="status-content">等待指令...</div>
         </div>
+    </div>
+
+    <div class="footer">
+        <p>🌐 當前環境：HTTP 模式 (直連開啟)</p>
     </div>
 </div>
+
 <script src="js/script.js"></script>
 </body>
 </html>
