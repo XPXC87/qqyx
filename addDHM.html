@@ -23,64 +23,56 @@
     <p class="footer">※ 資料已與雲端資料庫同步</p>
 </div>
 
-<script>
-    const CLOUDFLARE_API = 'https://xpxc.qzz.io/api'; 
-    const BACKEND_API = 'http://47.96.230.2:9997/qqyxNew/addDHM';
+const CLOUDFLARE_API = 'https://xpxc.qzz.io/api'; 
 
-    // 網頁開啟時，自動同步雲端
-    window.onload = async function() {
-        const textarea = document.getElementById('codes');
-        try {
-            const response = await fetch(CLOUDFLARE_API);
-            if (response.ok) {
-                const dbCodes = await response.json();
-                if (dbCodes && dbCodes.length > 0) {
-                    textarea.value = dbCodes.join('\n');
-                }
+// 網頁開啟時自動同步雲端資料
+window.onload = async function() {
+    const textarea = document.getElementById('codes');
+    try {
+        const response = await fetch(CLOUDFLARE_API);
+        if (response.ok) {
+            const dbCodes = await response.json();
+            if (dbCodes && dbCodes.length > 0) {
+                textarea.value = dbCodes.join('\n');
             }
-        } catch (error) {
-            textarea.placeholder = "雲端同步失敗：" + error.message;
         }
-    };
-
-    async function submit() {
-        const textarea = document.getElementById('codes');
-        const btn = document.getElementById('submitBtn');
-        const content = textarea.value.trim();
-        const lines = content.split('\n').map(s => s.trim()).filter(s => s !== "");
-        
-        if (lines.length === 0) return alert("請輸入禮包碼");
-
-        // 鎖定按鈕避免重複點擊
-        btn.disabled = true;
-        btn.innerText = "處理中...";
-        btn.style.background = "#ccc";
-
-        try {
-            // 1. 同步到 Cloudflare D1 (直接存整塊內容)
-            await fetch(CLOUDFLARE_API, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code: content })
-            });
-
-            // 2. 直接請求後端 API (使用 fetch 替代 window.open)
-            const joined = lines.join('@==');
-            const targetUrl = `${BACKEND_API}?dhm=${encodeURIComponent(joined)}`;
-            
-            // 注意：如果後端沒設定 CORS，這步可能會噴錯，但不影響 Cloudflare 存檔
-            const res = await fetch(targetUrl, { mode: 'no-cors' }); 
-            
-            alert("提交成功！");
-        } catch (error) {
-            alert("提交過程發生錯誤：" + error.message);
-        } finally {
-            // 恢復按鈕
-            btn.disabled = false;
-            btn.innerText = "提交並更新紀錄";
-            btn.style.background = "#28a745";
-        }
+    } catch (error) {
+        console.log("雲端無紀錄或同步失敗");
     }
-</script>
+};
+
+async function submit() {
+    const textarea = document.getElementById('codes');
+    const content = textarea.value.trim();
+    
+    if (!content) return alert("請輸入禮包碼");
+
+    // 提示正在處理
+    const btn = document.querySelector('button');
+    const originalText = btn.innerText;
+    btn.innerText = "同步並提交中...";
+    btn.disabled = true;
+
+    try {
+        // 只發送一次請求給 Worker，由 Worker 處理後續所有動作
+        const response = await fetch(CLOUDFLARE_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: content })
+        });
+
+        if (response.ok) {
+            alert("提交成功！資料已同步至雲端並發送至後端。");
+        } else {
+            alert("提交失敗，請檢查 Worker 狀態。");
+        }
+    } catch (error) {
+        alert("提交錯誤：" + error.message);
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
+}
+
 </body>
 </html>
