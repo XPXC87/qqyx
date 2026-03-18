@@ -10,11 +10,7 @@ window.onload = async () => {
             textarea.value = data.code.split(',').filter(s => s.trim() !== "").join('\n');
             updateLineCount();
         }
-    } catch (e) {
-        const local = localStorage.getItem('gift_codes');
-        if (local) textarea.value = local;
-        updateLineCount();
-    }
+    } catch (e) { console.warn("D1 同步失敗"); }
 };
 
 async function submitData() {
@@ -27,7 +23,7 @@ async function submitData() {
 
     submitBtn.disabled = true;
     statusBox.style.display = "block";
-    statusContent.innerHTML = "[SYSTEM] 數據發送中...";
+    statusContent.innerHTML = "<span style='color:#888'>[SYSTEM] 正在通過 IP 通道直連轉發...</span>";
 
     const csvFormat = textarea.value.split('\n').map(s => s.trim()).filter(s => s !== "").join(',');
 
@@ -41,17 +37,13 @@ async function submitData() {
         const result = await response.json();
 
         if (result.success) {
-            // 直接顯示後端抓回來的內容
-            statusContent.innerHTML = `[SUCCESS] 同步完成<br>[SERVER] ${result.backendResponse}`;
-            statusContent.style.color = "#fff";
+            statusContent.innerHTML = `<span style='color:#fff'>[SUCCESS] 指令已確認</span><br>[SERVER] ${result.backendResponse}`;
             localStorage.setItem('gift_codes', textarea.value);
         } else {
-            statusContent.innerHTML = `[ERROR] ${result.error}`;
-            statusContent.style.color = "#ff4444";
+            statusContent.innerHTML = `<span style='color:#ff4444'>[NODE ERROR] ${result.error}</span>`;
         }
     } catch (err) {
-        statusContent.innerHTML = `[FATAL] 網絡中斷: ${err.message}`;
-        statusContent.style.color = "#ff4444";
+        statusContent.innerHTML = `<span style='color:#ff4444'>[FATAL ERROR] 連線中斷: ${err.message}</span>`;
     } finally {
         submitBtn.disabled = false;
     }
@@ -66,7 +58,6 @@ function updateLineCount() {
 function clearAll() {
     if (confirm("🗑️ 確定要清空嗎？")) {
         document.getElementById('codes').value = "";
-        localStorage.removeItem('gift_codes');
         updateLineCount();
         document.getElementById('status-box').style.display = "none";
     }
