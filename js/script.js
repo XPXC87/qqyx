@@ -1,4 +1,4 @@
-const WORKER_URL = 'https://xpxc.qzz.io/api';
+const WORKER_URL = 'http://xpxc.qzz.io/api';
 
 // 初始化：讀取資料
 window.onload = async () => {
