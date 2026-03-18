@@ -28,7 +28,7 @@ async function submitData() {
 
     submitBtn.disabled = true;
     statusBox.style.display = "block";
-    statusContent.innerHTML = "[SYSTEM] 正在處理資料並寫入 API...";
+    statusContent.innerHTML = "[系統日誌] 正在處理資料並寫入 API...";
 
     const csvFormat = content.split('\n').map(s => s.trim()).filter(s => s !== "").join(',');
     const apiFormat = csvFormat.split(',').join('@==');
