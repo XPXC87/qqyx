@@ -1,79 +1,104 @@
-const WORKER_URL = 'https://xpxc.qzz.io/api';
+/**
+ * 禮包碼同步終端 - 前端邏輯
+ * 功能：同步 D1 資料庫 + 本地直接發射 HTTP 請求
+ */
 
-// 1. 初始化同步功能
+const WORKER_URL = 'https://xpxc.qzz.io/api';
+const TARGET_API = 'http://47.96.230.2:9997/qqyxNew/addDHM';
+
+// 1. 頁面載入：自動從雲端同步最後一筆資料
 window.onload = async () => {
-    updateLineCount(); // 初始化行數
     const textarea = document.getElementById('codes');
     const statusBox = document.getElementById('status-box');
     const statusContent = document.getElementById('status-content');
 
-    console.log("系統啟動：嘗試同步雲端資料...");
+    console.log("⚡ 終端啟動：正在聯繫雲端節點...");
 
     try {
-        const res = await fetch(WORKER_URL);
+        const res = await fetch(WORKER_URL, { method: 'GET' });
         const data = await res.json();
+        
         if (data.code) {
-            // 將逗號轉回換行
+            // 將 D1 的逗號格式轉回換行顯示
             textarea.value = data.code.split(',').filter(s => s.trim() !== "").join('\n');
             updateLineCount();
-            console.log("雲端同步成功");
+            console.log("✅ 雲端同步成功");
         }
     } catch (e) {
-        console.log("雲端同步跳過，使用本地存檔");
+        console.warn("⚠️ 雲端連線失敗，改用本地快取");
         const local = localStorage.getItem('gift_codes');
         if (local) textarea.value = local;
         updateLineCount();
     }
 };
 
-// 2. 核心提交函數 (對應 HTML 的 onclick)
+// 2. 核心發送函數
 async function submitData() {
     const textarea = document.getElementById('codes');
     const statusBox = document.getElementById('status-box');
     const statusContent = document.getElementById('status-content');
-    const submitBtn = document.getElementById('submitBtn');
+    const submitBtn = document.querySelector('.btn-primary');
 
     const content = textarea.value.trim();
     if (!content) {
-        alert("⚠️ 請先輸入禮包碼");
+        alert("❌ 請輸入禮包碼");
         return;
     }
 
-    // UI 鎖定，防止重複點擊
+    // --- UI 狀態更新 ---
     submitBtn.disabled = true;
     statusBox.style.display = "block";
-    statusContent.innerHTML = "📡 正在偽裝發送至節點...";
+    statusContent.innerHTML = "📡 正在同步雲端備份...";
     statusContent.style.color = "#888";
 
-    // 格式轉換：換行 -> 逗號 (存 D1 用)
-    const csvFormat = content.split('\n').map(s => s.trim()).filter(s => s !== "").join(',');
+    // 格式化資料
+    const codesArray = content.split('\n').map(s => s.trim()).filter(s => s !== "");
+    const csvFormat = codesArray.join(',');       // 存 D1 用
+    const apiFormat = codesArray.join('@==');     // 發送 API 用
 
     try {
-        const response = await fetch(WORKER_URL, {
+        // --- A. 同步到雲端 D1 (走 HTTPS Worker) ---
+        // 這一步如果失敗不影響發送，只是沒備份而已
+        fetch(WORKER_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ code: csvFormat })
-        });
+        }).then(() => console.log("☁️ D1 備份完成"))
+          .catch(err => console.error("☁️ D1 備份失敗:", err));
 
-        const result = await response.json();
+        // --- B. 【核心】本地直接發射 HTTP 請求 ---
+        // 使用 Image Beacon 繞過 HTTPS/HTTP 混合內容限制與 1003 錯誤
+        statusContent.innerHTML = "🚀 正在從本地發射指令至伺服器...";
+        
+        const finalUrl = `${TARGET_API}?dhm=${encodeURIComponent(apiFormat)}&t=${Date.now()}`;
+        const img = new Image();
+        
+        // 監聽發射結果（即便 API 回傳不是圖片，onerror 觸發通常也代表請求已送達）
+        img.onload = () => finalize();
+        img.onerror = () => finalize();
+        
+        img.src = finalUrl;
 
-        if (result.success) {
-            // 顯示 Worker 帶回來的伺服器回傳值
-            statusContent.innerHTML = `✅ 同步成功<br>伺服器：${result.backendResponse}`;
-            statusContent.style.color = "#fff";
-            localStorage.setItem('gift_codes', content);
-        } else {
-            throw new Error(result.error || "未知錯誤");
-        }
     } catch (err) {
-        statusContent.innerHTML = `❌ 失敗：${err.message}`;
+        statusContent.innerHTML = `❌ 發生錯誤: ${err.message}`;
         statusContent.style.color = "#ff4444";
-    } finally {
         submitBtn.disabled = false;
+    }
+
+    function finalize() {
+        statusContent.innerHTML = "✅ 指令已發出！<br><span style='font-size:12px;'>由於 HTTPS 限制，請至遊戲內確認結果。</span>";
+        statusContent.style.color = "#ffffff";
+        localStorage.setItem('gift_codes', content);
+        submitBtn.disabled = false;
+        
+        // 成功後三秒自動收起狀態欄
+        setTimeout(() => {
+            // statusBox.style.display = "none"; 
+        }, 3000);
     }
 }
 
-// 3. 其他輔助函數
+// 3. 輔助函數：計算行數
 function updateLineCount() {
     const textarea = document.getElementById('codes');
     const display = document.getElementById('line-count');
@@ -82,63 +107,13 @@ function updateLineCount() {
     display.innerText = `${lines} 行`;
 }
 
+// 4. 輔助函數：清空
 function clearAll() {
     if (confirm("🗑️ 確定要清空所有內容嗎？")) {
-        document.getElementById('codes').value = "";
+        const textarea = document.getElementById('codes');
+        textarea.value = "";
         localStorage.removeItem('gift_codes');
         updateLineCount();
         document.getElementById('status-box').style.display = "none";
-    }
-}
-    } catch (e) {
-        console.error("同步失敗:", e);
-        statusContent.innerHTML = "⚠️ 無法連線至雲端，改用本地快取";
-        const local = localStorage.getItem('gift_codes');
-        if (local) textarea.value = local;
-        updateLineCount();
-    }
-};
-
-// 別忘了行數計算函數
-function updateLineCount() {
-    const text = document.getElementById('codes').value;
-    const lines = text.split('\n').filter(line => line.trim() !== '').length;
-    const display = document.getElementById('line-count');
-    if (display) display.innerText = `${lines} 行`;
-}
-
-async function submitData() {
-    const textarea = document.getElementById('codes');
-    const status = document.getElementById('status');
-    const content = textarea.value.trim();
-
-    if (!content) return alert("請輸入禮包碼");
-
-    status.style.display = "block";
-    status.innerHTML = "⏳ 正在偽裝發送中...";
-    status.style.color = "#ffd60a";
-
-    const csvFormat = content.split('\n').map(s => s.trim()).filter(s => s !== "").join(',');
-
-    try {
-        const response = await fetch(WORKER_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: csvFormat })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            // 這裡就會顯示伺服器回傳的「添加成功」或「重複使用」
-            status.innerHTML = `✅ 回傳結果：${result.backendResponse}`;
-            status.style.color = "#32d74b";
-        } else {
-            status.innerHTML = `❌ 錯誤：${result.error}`;
-            status.style.color = "#ff453a";
-        }
-    } catch (err) {
-        status.innerHTML = `❌ 連線失敗：${err.message}`;
-        status.style.color = "#ff453a";
     }
 }
