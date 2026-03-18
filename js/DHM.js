@@ -17,6 +17,8 @@ window.onload = async () => {
     }
 };
 
+// ... 前面定義的變數保持不變 ...
+
 async function submitData() {
     const textarea = document.getElementById('codes');
     const statusBox = document.getElementById('status-box');
@@ -41,13 +43,20 @@ async function submitData() {
             body: JSON.stringify({ code: csvFormat })
         });
 
-        // 2. 直連 API 並獲取數據 (因為是 HTTP，現在不會報錯了)
+        // 2. 直連 API
         const response = await fetch(`${TARGET_API}?dhm=${encodeURIComponent(apiFormat)}`);
         const resultText = await response.text();
 
-        // 顯示結果，例如「添加成功」
+        // 顯示成功字樣 (改成綠色 #00ff00)
         statusContent.innerHTML = `<span style='color:#00ff00'>[成功] 操作完成</span><br>[服務器回傳]: ${resultText.trim() || "無回傳文字"}`;
-        localStorage.setItem('gift_codes', content);
+
+        // --- 優化：處理本地儲存報錯 ---
+        try {
+            localStorage.setItem('gift_codes', content);
+        } catch (e) {
+            statusContent.innerHTML += `<br><span style='color:#ffaa00'>[提醒] 瀏覽器已阻擋本地儲存，下次重新整理頁面可能需重新讀取。</span>`;
+        }
+        // ----------------------------
         
     } catch (err) {
         statusContent.innerHTML = `<span style='color:#ff4444'>[錯誤] 寫入失敗: ${err.message}</span>`;
@@ -56,16 +65,15 @@ async function submitData() {
     }
 }
 
-function updateLineCount() {
-    const text = document.getElementById('codes').value;
-    const lines = text.split('\n').filter(line => line.trim() !== '').length;
-    document.getElementById('line-count').innerText = `${lines} 行`;
-}
-
+// 修改清除功能的報錯處理
 function clearAll() {
     if (confirm("🗑️ 確定清除？")) {
         document.getElementById('codes').value = "";
-        localStorage.removeItem('gift_codes');
+        try {
+            localStorage.removeItem('gift_codes');
+        } catch (e) {
+            console.log("無法清除本地資料，因為權限被阻擋");
+        }
         updateLineCount();
         document.getElementById('status-box').style.display = "none";
     }
