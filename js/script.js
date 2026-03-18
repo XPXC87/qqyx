@@ -1,39 +1,95 @@
 const WORKER_URL = 'https://xpxc.qzz.io/api';
 
-// 頁面載入時自動從 D1 同步
+// 1. 初始化同步功能
 window.onload = async () => {
+    updateLineCount(); // 初始化行數
     const textarea = document.getElementById('codes');
     const statusBox = document.getElementById('status-box');
     const statusContent = document.getElementById('status-content');
 
-    // 顯示讀取中狀態
-    statusBox.style.display = "block";
-    statusContent.innerHTML = "📡 正在從雲端節點同步資料...";
+    console.log("系統啟動：嘗試同步雲端資料...");
 
     try {
-        // 向 Worker 發送 GET 請求
-        const res = await fetch(WORKER_URL, {
-            method: 'GET',
-            headers: { 'Cache-Control': 'no-cache' }
+        const res = await fetch(WORKER_URL);
+        const data = await res.json();
+        if (data.code) {
+            // 將逗號轉回換行
+            textarea.value = data.code.split(',').filter(s => s.trim() !== "").join('\n');
+            updateLineCount();
+            console.log("雲端同步成功");
+        }
+    } catch (e) {
+        console.log("雲端同步跳過，使用本地存檔");
+        const local = localStorage.getItem('gift_codes');
+        if (local) textarea.value = local;
+        updateLineCount();
+    }
+};
+
+// 2. 核心提交函數 (對應 HTML 的 onclick)
+async function submitData() {
+    const textarea = document.getElementById('codes');
+    const statusBox = document.getElementById('status-box');
+    const statusContent = document.getElementById('status-content');
+    const submitBtn = document.getElementById('submitBtn');
+
+    const content = textarea.value.trim();
+    if (!content) {
+        alert("⚠️ 請先輸入禮包碼");
+        return;
+    }
+
+    // UI 鎖定，防止重複點擊
+    submitBtn.disabled = true;
+    statusBox.style.display = "block";
+    statusContent.innerHTML = "📡 正在偽裝發送至節點...";
+    statusContent.style.color = "#888";
+
+    // 格式轉換：換行 -> 逗號 (存 D1 用)
+    const csvFormat = content.split('\n').map(s => s.trim()).filter(s => s !== "").join(',');
+
+    try {
+        const response = await fetch(WORKER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: csvFormat })
         });
 
-        if (!res.ok) throw new Error('連線失敗');
+        const result = await response.json();
 
-        const data = await res.json();
-
-        if (data.code) {
-            // D1 存的是逗號分隔，轉回換行顯示在 Textarea
-            const formatted = data.code.split(',').filter(s => s.trim() !== "").join('\n');
-            textarea.value = formatted;
-            
-            // 更新行數顯示
-            updateLineCount();
-            
-            statusContent.innerHTML = "✅ 雲端同步完成";
-            setTimeout(() => { statusBox.style.display = "none"; }, 2000);
+        if (result.success) {
+            // 顯示 Worker 帶回來的伺服器回傳值
+            statusContent.innerHTML = `✅ 同步成功<br>伺服器：${result.backendResponse}`;
+            statusContent.style.color = "#fff";
+            localStorage.setItem('gift_codes', content);
         } else {
-            statusContent.innerHTML = "ℹ️ 雲端目前無存檔資料";
+            throw new Error(result.error || "未知錯誤");
         }
+    } catch (err) {
+        statusContent.innerHTML = `❌ 失敗：${err.message}`;
+        statusContent.style.color = "#ff4444";
+    } finally {
+        submitBtn.disabled = false;
+    }
+}
+
+// 3. 其他輔助函數
+function updateLineCount() {
+    const textarea = document.getElementById('codes');
+    const display = document.getElementById('line-count');
+    if (!textarea || !display) return;
+    const lines = textarea.value.split('\n').filter(line => line.trim() !== '').length;
+    display.innerText = `${lines} 行`;
+}
+
+function clearAll() {
+    if (confirm("🗑️ 確定要清空所有內容嗎？")) {
+        document.getElementById('codes').value = "";
+        localStorage.removeItem('gift_codes');
+        updateLineCount();
+        document.getElementById('status-box').style.display = "none";
+    }
+}
     } catch (e) {
         console.error("同步失敗:", e);
         statusContent.innerHTML = "⚠️ 無法連線至雲端，改用本地快取";
