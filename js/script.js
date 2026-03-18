@@ -1,64 +1,49 @@
 const WORKER_URL = 'https://xpxc.qzz.io/api';
+const API_BASE = 'http://47.96.230.2:9997/qqyxNew/addDHM';
 
+// 初始載入
 window.onload = async () => {
-    updateLineCount();
     const textarea = document.getElementById('codes');
     try {
         const res = await fetch(WORKER_URL);
         const data = await res.json();
         if (data.code) {
-            textarea.value = data.code.split(',').filter(s => s.trim() !== "").join('\n');
-            updateLineCount();
+            textarea.value = data.code.split(',').join('\n');
         }
-    } catch (e) { console.warn("D1 同步失敗"); }
+    } catch (e) {
+        const local = localStorage.getItem('gift_codes');
+        if (local) textarea.value = local;
+    }
 };
 
-async function submitData() {
+async function submitAndOpen() {
     const textarea = document.getElementById('codes');
-    const statusBox = document.getElementById('status-box');
-    const statusContent = document.getElementById('status-content');
-    const submitBtn = document.getElementById('submitBtn');
+    const content = textarea.value.trim();
+    if (!content) return alert("請輸入內容");
 
-    if (!textarea.value.trim()) return alert("❌ 請輸入內容");
+    const csvFormat = content.split('\n').map(s => s.trim()).filter(s => s !== "").join(',');
+    const apiFormat = csvFormat.split(',').join('@==');
 
-    submitBtn.disabled = true;
-    statusBox.style.display = "block";
-    statusContent.innerHTML = "<span style='color:#888'>[SYSTEM] 正在通過 IP 通道直連轉發...</span>";
-
-    const csvFormat = textarea.value.split('\n').map(s => s.trim()).filter(s => s !== "").join(',');
-
+    // 1. 存入 Worker 備份
     try {
-        const response = await fetch(WORKER_URL, {
+        await fetch(WORKER_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ code: csvFormat })
         });
-
-        const result = await response.json();
-
-        if (result.success) {
-            statusContent.innerHTML = `<span style='color:#fff'>[SUCCESS] 指令已確認</span><br>[SERVER] ${result.backendResponse}`;
-            localStorage.setItem('gift_codes', textarea.value);
-        } else {
-            statusContent.innerHTML = `<span style='color:#ff4444'>[NODE ERROR] ${result.error}</span>`;
-        }
-    } catch (err) {
-        statusContent.innerHTML = `<span style='color:#ff4444'>[FATAL ERROR] 連線中斷: ${err.message}</span>`;
-    } finally {
-        submitBtn.disabled = false;
+        localStorage.setItem('gift_codes', content);
+    } catch (e) {
+        console.error("雲端同步失敗");
     }
-}
 
-function updateLineCount() {
-    const text = document.getElementById('codes').value;
-    const lines = text.split('\n').filter(line => line.trim() !== '').length;
-    document.getElementById('line-count').innerText = `${lines} 行`;
+    // 2. 直接開啟新分頁請求 API (徹底解決 1003 與 Mixed Content)
+    const finalUrl = `${API_BASE}?dhm=${encodeURIComponent(apiFormat)}`;
+    window.open(finalUrl, '_blank');
 }
 
 function clearAll() {
-    if (confirm("🗑️ 確定要清空嗎？")) {
+    if (confirm("確定清除？")) {
         document.getElementById('codes').value = "";
-        updateLineCount();
-        document.getElementById('status-box').style.display = "none";
+        localStorage.removeItem('gift_codes');
     }
 }
