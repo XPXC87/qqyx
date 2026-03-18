@@ -3,24 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>六石禮包碼工具 v4.5</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <title>禮包碼雲端同步 v1.0</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-
-<div class="card">
-    <h3>🚀 六石禮包碼同步</h3>
-    <textarea id="codes" placeholder="貼入禮包碼，一行一個..."></textarea>
-    
-    <div class="btn-group">
-        <button class="btn-submit" onclick="submitToTab()">提交並打開新分頁</button>
-        <button class="btn-save" onclick="saveToCloud()">僅儲存到雲端</button>
+    <div class="card">
+        <h3>🚀 禮包碼雲端同步</h3>
+        <textarea id="codes" placeholder="請在此貼入禮包碼...&#10;一組一行"></textarea>
+        
+        <div class="btn-group">
+            <button class="btn-submit" onclick="submitData()">提交並同步 API</button>
+            <button class="btn-clear" onclick="clearAll()">一鍵清空</button>
+        </div>
+        
+        <div id="status"></div>
     </div>
 
-    <div id="status"></div>
-</div>
-
-<script src="/script/script.js"></script>
-
+    <script src="js/script.js"></script>
 </body>
 </html>
