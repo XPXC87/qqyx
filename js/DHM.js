@@ -50,7 +50,7 @@ async function submitData() {
         localStorage.setItem('gift_codes', content);
         
     } catch (err) {
-        statusContent.innerHTML = `<span style='color:#ff4444'>[錯誤] 寫入失敗: ${err.message}</span>`;
+        statusContent.innerHTML = `<span style='color:#ff4444'>[錯誤] 寫入失敗: ${err.message}</span><br>`;
     } finally {
         submitBtn.disabled = false;
     }
