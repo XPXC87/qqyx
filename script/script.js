@@ -1,64 +1,66 @@
 const API_URL = 'https://xpxc.qzz.io/api';
 
-// 頁面載入時自動讀取雲端紀錄
+// 頁面載入：先讀本地，再讀雲端並把逗號轉回換行
 window.onload = async () => {
+    const localData = localStorage.getItem('gift_codes');
+    if (localData) document.getElementById('codes').value = localData;
+
     try {
         const r = await fetch(API_URL);
         const d = await r.json();
-        if (d.code) document.getElementById('codes').value = d.code;
+        if (d.code) {
+            // 將資料庫的逗號轉回網頁的換行
+            const formattedCode = d.code.split(',').join('\n');
+            document.getElementById('codes').value = formattedCode;
+            localStorage.setItem('gift_codes', formattedCode);
+        }
     } catch (e) {
-        console.error("讀取雲端資料失敗:", e);
+        console.log("雲端讀取失敗，使用本地存檔");
     }
 };
 
-// 核心功能：提交並開啟新分頁
-async function submitToTab() {
+// 儲存：把換行轉成逗號存入雲端
+async function saveToCloud(showMsg = true) {
     const textarea = document.getElementById('codes');
     const content = textarea.value.trim();
     
-    if (!content) {
-        alert("請輸入禮包碼！");
-        return;
-    }
+    // 轉成逗號格式
+    const csvFormat = content.split('\n')
+                             .map(s => s.trim())
+                             .filter(s => s !== "")
+                             .join(',');
 
-    // 先同步到雲端備份
-    saveToCloud(false);
+    localStorage.setItem('gift_codes', content);
 
-    // 格式處理：偵測換行轉 @==，尾巴不加
-    const codeArray = content.split('\n')
-                             .map(line => line.trim())
-                             .filter(line => line !== "");
-    
-    const joined = codeArray.join('@==');
-    
-    // 組合成目標 API 網址
-    const targetUrl = `http://47.96.230.2:9997/qqyxNew/addDHM?dhm=${encodeURIComponent(joined)}`;
-
-    // 以新分頁開啟
-    window.open(targetUrl, '_blank');
-    
-    showStatus("✅ 已同步並開啟分頁提交", "var(--success)");
-}
-
-// 儲存到雲端 D1
-async function saveToCloud(showMsg = true) {
-    const content = document.getElementById('codes').value;
     try {
-        const response = await fetch(API_URL, {
+        await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: content })
+            body: JSON.stringify({ code: csvFormat })
         });
-        
-        if (response.ok && showMsg) {
-            showStatus("☁️ 雲端紀錄已更新", "var(--accent)");
-        }
+        if (showMsg) showStatus("☁️ 雲端已存為逗號格式", "#007bff");
     } catch (e) {
-        if (showMsg) showStatus("❌ 儲存失敗", "var(--error)");
+        if (showMsg) showStatus("💾 僅存於本地", "#dc3545");
     }
 }
 
-// 顯示狀態提示
+// 提交：開啟分頁 (維持 @== 格式)
+function submitToTab() {
+    const content = document.getElementById('codes').value.trim();
+    if (!content) return alert("請輸入禮包碼");
+
+    saveToCloud(false);
+
+    const joined = content.split('\n')
+                          .map(s => s.trim())
+                          .filter(s => s !== "")
+                          .join('@==');
+    
+    const targetUrl = `http://47.96.230.2:9997/qqyxNew/addDHM?dhm=${encodeURIComponent(joined)}`;
+    window.open(targetUrl, '_blank');
+    showStatus("✅ 已開啟分頁提交", "#28a745");
+}
+
 function showStatus(msg, color) {
     const s = document.getElementById('status');
     s.innerText = msg;
