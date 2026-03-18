@@ -2,7 +2,7 @@ const WORKER_URL = 'https://xpxc.qzz.io/api';
 const TARGET_API = 'http://47.96.230.2:9997/qqyxNew/addDHM';
 
 window.onload = async () => {
-    updateLineCount();
+//    updateLineCount();
     const textarea = document.getElementById('codes');
     try {
         const res = await fetch(WORKER_URL);
