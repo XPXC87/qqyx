@@ -3,27 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>禮包碼同步工具</title>
+    <title>禮包碼同步終端</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<div class="card">
-    <h2>🚀 禮包碼同步工具</h2>
-    
-    <div class="input-container">
-        <textarea id="codes" placeholder="請貼上禮包碼，一組一行..."></textarea>
+<div class="container">
+    <div class="header">
+        <h1><span>⚡</span> 禮包碼同步終端</h1>
+        <p>TERMINAL v2.0 // BY DUO ZAI</p>
     </div>
-    
-    <div class="btn-group">
-        <button id="submitBtn" class="btn-submit" onclick="submitData()">發送並同步</button>
-        <button class="btn-clear" onclick="clearAll()">清空</button>
+
+    <div class="main-card">
+        <div class="input-header">
+            <span><i class="icon">📝</i> 輸入區域</span>
+            <span id="line-count">0 行</span>
+        </div>
+        
+        <textarea id="codes" placeholder="請輸入禮包碼，一組一行..." oninput="updateLineCount()"></textarea>
+
+        <div class="action-group">
+            <button class="btn-primary" onclick="submitData()">
+                <span class="icon">🚀</span> 執行同步與轉發
+            </button>
+            <button class="btn-secondary" onclick="clearAll()">
+                <span class="icon">🗑️</span> 清除
+            </button>
+        </div>
+
+        <div id="status-box" class="status-box" style="display:none;">
+            <div class="status-header">
+                <span class="pulse"></span> 系統回饋
+            </div>
+            <div id="status-content">等待指令中...</div>
+        </div>
     </div>
-    
-    <div id="status" style="display:none;"></div>
+
+    <div class="footer">
+        <p>🔗 節點網域: xpxc.qzz.io</p>
+        <p>🛡️ 安全加密連線已開啟</p>
+    </div>
 </div>
 
 <script src="js/script.js"></script>
-
 </body>
 </html>
