@@ -1,78 +1,52 @@
-const API_URL = 'http://xpxc.qzz.io/api';
-
-// 頁面載入：讀取 D1 數據 (CSV 格式) 並轉為換行顯示
-window.onload = async () => {
-    // 優先讀取本地快取
-    const localData = localStorage.getItem('gift_codes');
-    if (localData) document.getElementById('codes').value = localData;
-
-    try {
-        const r = await fetch(API_URL);
-        const d = await r.json();
-        if (d.code) {
-            // 關鍵：將資料庫的逗號轉回換行
-            const formatted = d.code.split(',').filter(s => s !== "").join('\n');
-            document.getElementById('codes').value = formatted;
-            localStorage.setItem('gift_codes', formatted);
-        }
-    } catch (e) {
-        console.log("讀取失敗，使用本地存檔");
-    }
-};
-
-// 提交功能
 async function submitData() {
     const textarea = document.getElementById('codes');
     const content = textarea.value.trim();
-    const btn = document.querySelector('.btn-submit');
     const status = document.getElementById('status');
     
     if (!content) return alert("請輸入禮包碼");
 
-    btn.disabled = true;
-    btn.innerText = "同步轉發中...";
     status.style.display = "block";
-    status.innerText = "正在連線伺服器...";
+    status.innerText = "正在嘗試直接發送請求...";
     status.style.color = "#007bff";
 
-    // 準備存入資料庫的格式 (逗號分隔)
-    const csvFormat = content.split('\n')
+    // 1. 格式轉換：偵測換行轉為 @==
+    const apiFormat = content.split('\n')
                              .map(s => s.trim())
                              .filter(s => s !== "")
-                             .join(',');
+                             .join('@==');
 
-    // 更新本地快取
-    localStorage.setItem('gift_codes', content);
+    // 2. 組合最終 API 網址 (不加 encodeURIComponent 試試看，有些 API 很挑)
+    const targetUrl = `http://47.96.230.2:9997/qqyxNew/addDHM?dhm=${apiFormat}`;
 
     try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: csvFormat }) 
+        // 使用 no-cors 模式嘗試強行撞擊 API
+        // 注意：no-cors 模式下你拿不到 API 回傳的成功或失敗訊息
+        await fetch(targetUrl, {
+            mode: 'no-cors',
+            method: 'GET'
         });
+
+        // 因為 no-cors 拿不到結果，我們同步存一份到 D1 當紀錄就好
+        saveToCloudOnly(content);
         
-        const result = await response.json();
-        
-        if (result.success) {
-            status.innerText = `✅ 成功！回應：${result.backendMsg}`;
-            status.style.color = "#28a745";
-        } else {
-            status.innerText = `⚠️ 異常：${result.backendMsg}`;
-            status.style.color = "#dc3545";
-        }
+        status.innerText = "🚀 請求已發送！(請確認 API 是否有收到資料)";
+        status.style.color = "#28a745";
     } catch (e) {
-        status.innerText = "❌ 網路連線錯誤";
+        status.innerText = "❌ 直接發送失敗，可能是瀏覽器攔截了不安全的 HTTP 請求";
         status.style.color = "#dc3545";
-    } finally {
-        btn.disabled = false;
-        btn.innerText = "提交並同步 API";
     }
 }
 
-function clearAll() {
-    if(confirm("確定要清空嗎？這也會同步清除雲端紀錄。")) {
-        document.getElementById('codes').value = "";
-        localStorage.removeItem('gift_codes');
-        // 可選：發送空內容給伺服器以清空 D1
+// 僅備份到雲端，不處理轉發
+async function saveToCloudOnly(content) {
+    const csvFormat = content.split('\n').map(s => s.trim()).filter(s => s !== "").join(',');
+    try {
+        await fetch('https://xpxc.qzz.io/api', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: csvFormat })
+        });
+    } catch (e) {
+        console.log("雲端備份失敗");
     }
 }
