@@ -1,0 +1,83 @@
+/* 預設為深色風格 */
+:root {
+    --bg-color: #121212;
+    --text-color: #e0e0e0;
+    --btn-bg: #ffffff;
+    --btn-text: #121212;
+    --accent-color: #ffcc00; /* 加入一點點球球英雄的電力黃 */
+}
+
+/* 淺色模式類別 */
+body.light-mode {
+    --bg-color: #ffffff;
+    --text-color: #333333;
+    --btn-bg: #333333;
+    --btn-text: #ffffff;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    text-align: center;
+    padding: 20px;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+h1 { 
+    margin-bottom: 10px; 
+    font-size: 24px;
+    letter-spacing: 1px;
+}
+
+p { margin-bottom: 30px; opacity: 0.8; }
+
+.btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    max-width: 300px;
+}
+
+.btn {
+    padding: 15px;
+    background-color: var(--btn-bg);
+    color: var(--btn-text);
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    transition: transform 0.1s, background-color 0.3s, color 0.3s;
+    border: none;
+}
+
+.btn:active { 
+    transform: scale(0.95);
+    opacity: 0.9;
+}
+
+#theme-toggle {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: 1px solid var(--text-color);
+    color: var(--text-color);
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+#theme-toggle:hover {
+    background-color: var(--text-color);
+    color: var(--bg-color);
+}
