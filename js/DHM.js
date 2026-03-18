@@ -17,8 +17,6 @@ window.onload = async () => {
     }
 };
 
-// ... 前面定義的變數保持不變 ...
-
 async function submitData() {
     const textarea = document.getElementById('codes');
     const statusBox = document.getElementById('status-box');
