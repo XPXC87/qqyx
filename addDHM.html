@@ -16,14 +16,14 @@
 
     <div class="main-card">
         <div class="input-header">
-            <span><i class="icon">📝</i> 輸入區域</span>
+            <span>📝 輸入區域</span>
             <span id="line-count">0 行</span>
         </div>
         
         <textarea id="codes" placeholder="請輸入禮包碼，一組一行..." oninput="updateLineCount()"></textarea>
 
         <div class="action-group">
-            <button class="btn-primary" onclick="submitData()">
+            <button id="submitBtn" class="btn-primary" onclick="submitData()">
                 <span class="icon">🚀</span> 執行同步與轉發
             </button>
             <button class="btn-secondary" onclick="clearAll()">
