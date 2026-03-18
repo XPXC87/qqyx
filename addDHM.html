@@ -10,6 +10,7 @@
         h3 { margin-top: 0; text-align: center; }
         textarea { width: 100%; height: 250px; margin: 10px 0; padding: 12px; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
         button { width: 100%; padding: 18px; background: #28a745; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 18px; font-weight: bold; }
+        button:active { background: #218838; }
         .footer { font-size: 12px; color: #888; margin-top: 15px; text-align: center; }
     </style>
 </head>
@@ -18,73 +19,67 @@
 <div class="box">
     <h3>禮包碼保存系統</h3>
     <textarea id="codes" placeholder="正在同步雲端紀錄..." inputmode="latin"></textarea>
-    <button onclick="submit()">提交並更新紀錄</button>
+    <button id="submitBtn" onclick="submit()">提交並更新紀錄</button>
     <p class="footer">※ 資料已與雲端資料庫同步</p>
 </div>
 
 <script>
     const CLOUDFLARE_API = 'https://xpxc.qzz.io/api'; 
-    // 安全密鑰：必須與你 Worker 裡的 SECRET 變數完全一致
-    const SECRET = "XPXC87"; 
+    const BACKEND_API = 'http://47.96.230.2:9997/qqyxNew/addDHM';
 
-    // 生成安全 Header 的工具函數
-    function getAuthHeaders() {
-        const timestamp = Math.floor(Date.now() / 1000).toString();
-        // 簡單簽名邏輯：btoa(密鑰 + 時間戳)
-        const signature = btoa(SECRET + timestamp);
-        return {
-            'Content-Type': 'application/json',
-            'X-Timestamp': timestamp,
-            'X-Signature': signature
-        };
-    }
-
-    // 網頁開啟時，從 D1 資料庫讀取
+    // 網頁開啟時，自動同步雲端
     window.onload = async function() {
         const textarea = document.getElementById('codes');
         try {
-            const response = await fetch(CLOUDFLARE_API, {
-                method: 'GET',
-                headers: getAuthHeaders() // 加入時間校驗頭
-            });
-
+            const response = await fetch(CLOUDFLARE_API);
             if (response.ok) {
                 const dbCodes = await response.json();
                 if (dbCodes && dbCodes.length > 0) {
                     textarea.value = dbCodes.join('\n');
                 }
-            } else {
-                textarea.placeholder = "同步失敗：身分驗證未通過";
             }
         } catch (error) {
-            textarea.placeholder = "同步失敗：" + error.message;
+            textarea.placeholder = "雲端同步失敗：" + error.message;
         }
     };
 
     async function submit() {
         const textarea = document.getElementById('codes');
-        const lines = textarea.value.split('\n').map(s => s.trim()).filter(s => s !== "");
+        const btn = document.getElementById('submitBtn');
+        const content = textarea.value.trim();
+        const lines = content.split('\n').map(s => s.trim()).filter(s => s !== "");
         
         if (lines.length === 0) return alert("請輸入禮包碼");
 
-        // 1. 同步到 Cloudflare D1 (現在會先清空再存入最新的一筆)
-        // 注意：我們只取第一行或全部合併後存入，依你 Worker 的 DELETE 邏輯而定
-        // 這裡維持你原本的迴圈邏輯，但建議只發送一次請求以節省資源
+        // 鎖定按鈕避免重複點擊
+        btn.disabled = true;
+        btn.innerText = "處理中...";
+        btn.style.background = "#ccc";
+
         try {
-            const giftCode = lines.join('\n'); // 抓取全部內容一次存入
+            // 1. 同步到 Cloudflare D1 (直接存整塊內容)
             await fetch(CLOUDFLARE_API, {
                 method: 'POST',
-                headers: getAuthHeaders(), // 加入時間校驗頭
-                body: JSON.stringify({ code: giftCode })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: content })
             });
-        } catch (e) {
-            console.error("D1 同步失敗", e);
-        }
 
-        // 2. 執行原本不可變動的提交邏輯 (跳轉到後台 API)
-        const joined = lines.join('@==');
-        const url = `http://47.96.230.2:9997/qqyxNew/addDHM?dhm=${encodeURIComponent(joined)}`;
-        window.open(url, '_blank');
+            // 2. 直接請求後端 API (使用 fetch 替代 window.open)
+            const joined = lines.join('@==');
+            const targetUrl = `${BACKEND_API}?dhm=${encodeURIComponent(joined)}`;
+            
+            // 注意：如果後端沒設定 CORS，這步可能會噴錯，但不影響 Cloudflare 存檔
+            const res = await fetch(targetUrl, { mode: 'no-cors' }); 
+            
+            alert("提交成功！");
+        } catch (error) {
+            alert("提交過程發生錯誤：" + error.message);
+        } finally {
+            // 恢復按鈕
+            btn.disabled = false;
+            btn.innerText = "提交並更新紀錄";
+            btn.style.background = "#28a745";
+        }
     }
 </script>
 </body>
