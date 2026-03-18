@@ -5,36 +5,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>六石禮包碼工具</title>
     <style>
-        /* 全域設定 */
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            padding: 15px; 
-            background: #f4f7f9; 
-            display: flex; 
-            justify-content: center; 
-            margin: 0;
+        body { font-family: sans-serif; padding: 15px; background: #f4f7f9; display: flex; justify-content: center; margin: 0; }
+        .box { background: white; padding: 20px; border-radius: 15px; width: 100%; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; }
+        h3 { margin-top: 0; text-align: center; }
+        textarea { width: 100%; height: 250px; margin: 10px 0; padding: 12px; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 18px; background: #28a745; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 18px; font-weight: bold; }
+        .footer { font-size: 12px; color: #888; margin-top: 15px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h3>禮包碼保存系統</h3>
+    <textarea id="codes" placeholder="正在同步雲端紀錄..." inputmode="latin"></textarea>
+    <button onclick="submit()">提交並更新紀錄</button>
+    <p class="footer">※ 資料已與雲端資料庫同步</p>
+</div>
+
+<script>
+    const CLOUDFLARE_API = 'https://xpxc.qzz.io/api'; 
+
+    // 網頁開啟自動同步
+    window.onload = async function() {
+        const textarea = document.getElementById('codes');
+        try {
+            const response = await fetch(CLOUDFLARE_API);
+            if (response.ok) {
+                const dbCodes = await response.json();
+                if (dbCodes && dbCodes.length > 0) {
+                    textarea.value = dbCodes.join('\n');
+                }
+            }
+        } catch (error) {
+            console.log("尚未有雲端紀錄");
         }
+    };
+
+    async function submit() {
+        const textarea = document.getElementById('codes');
+        const content = textarea.value.trim();
+        const lines = content.split('\n').map(s => s.trim()).filter(s => s !== "");
         
-        .box { 
-            background: white; 
-            padding: 20px; 
-            border-radius: 15px; 
-            width: 100%; 
-            max-width: 450px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            box-sizing: border-box; /* 確保 padding 不會撐破版面 */
+        if (lines.length === 0) return alert("請輸入禮包碼");
+
+        // 1. 同步到雲端 (直接把整塊文字存進去，效率最高)
+        try {
+            await fetch(CLOUDFLARE_API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: content }) 
+            });
+        } catch (e) {
+            console.error("雲端同步失敗", e);
         }
 
-        h3 { margin-top: 0; color: #333; text-align: center; }
+        // 2. 執行原本的提交邏輯
+        const joined = lines.join('@==');
+        const url = `http://47.96.230.2:9997/qqyxNew/addDHM?dhm=${encodeURIComponent(joined)}`;
+        window.open(url, '_blank');
+    }
+</script>
 
-        textarea { 
-            width: 100%; 
-            height: 250px; /* 手機上高度拉長一點比較好輸入 */
-            margin: 10px 0; 
-            padding: 12px; 
-            border: 2px solid #ddd; 
-            border-radius: 10px; 
-            box-sizing: border-box; 
+</body>
+</html>            box-sizing: border-box; 
             font-family: monospace; 
             font-size: 16px; /* 防止 iOS 輸入時自動縮放 */
         }
