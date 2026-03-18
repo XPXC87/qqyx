@@ -1,4 +1,4 @@
-const API_URL = 'https://xpxc.qzz.io/api';
+const API_URL = 'http://xpxc.qzz.io/api';
 
 // 1. 頁面載入：維持原本的雲端讀取邏輯
 window.onload = async () => {
