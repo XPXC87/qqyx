@@ -1,4 +1,4 @@
-const WORKER_URL = 'https://xpxc.qzz.io/api';
+wconst WORKER_URL = 'https://xpxc.qzz.io/api';
 const TARGET_API = 'http://47.96.230.2:9997/qqyxNew/addDHM';
 
 window.onload = async () => {
@@ -50,7 +50,7 @@ async function submitData() {
         localStorage.setItem('gift_codes', content);
         
     } catch (err) {
-        statusContent.innerHTML = `<span style='color:#ff4444'>[錯誤] 寫入失敗: ${err.message}</span><br><small>請確認 API 伺服器已開啟跨域 (CORS) 權限</small>`;
+        statusContent.innerHTML = `<span style='color:#ff4444'>[錯誤] 寫入失敗: ${err.message}</span>`;
     } finally {
         submitBtn.disabled = false;
     }
