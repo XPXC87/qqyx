@@ -2,24 +2,28 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>禮包碼管理工具</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>禮包碼同步工具</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <div class="card">
-    <h2>禮包碼同步工具</h2>
-    <textarea id="codes" placeholder="一組禮包碼一行..."></textarea>
+    <h2>🚀 禮包碼同步工具</h2>
+    
+    <div class="input-container">
+        <textarea id="codes" placeholder="請貼上禮包碼，一組一行..."></textarea>
+    </div>
     
     <div class="btn-group">
-        <button onclick="submitData()">提交並發送</button>
+        <button id="submitBtn" class="btn-submit" onclick="submitData()">發送並同步</button>
         <button class="btn-clear" onclick="clearAll()">清空</button>
     </div>
     
-    <div id="status" style="display:none; margin-top:15px; font-weight:bold;"></div>
+    <div id="status" style="display:none;"></div>
 </div>
 
 <script src="js/script.js"></script>
+
 </body>
 </html>
