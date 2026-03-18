@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>六石禮包碼工具</title>
+    <title>禮包碼同步工具</title>
     <style>
         body { font-family: sans-serif; padding: 15px; background: #f4f7f9; display: flex; justify-content: center; margin: 0; }
         .box { background: white; padding: 20px; border-radius: 15px; width: 100%; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; }
         h3 { margin-top: 0; text-align: center; }
         textarea { width: 100%; height: 250px; margin: 10px 0; padding: 12px; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
         button { width: 100%; padding: 18px; background: #28a745; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 18px; font-weight: bold; }
-        button:active { background: #218838; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
         .footer { font-size: 12px; color: #888; margin-top: 15px; text-align: center; }
     </style>
 </head>
@@ -18,61 +18,62 @@
 
 <div class="box">
     <h3>禮包碼保存系統</h3>
-    <textarea id="codes" placeholder="正在同步雲端紀錄..." inputmode="latin"></textarea>
+    <textarea id="codes" placeholder="正在同步雲端紀錄..."></textarea>
     <button id="submitBtn" onclick="submit()">提交並更新紀錄</button>
     <p class="footer">※ 資料已與雲端資料庫同步</p>
 </div>
 
-const CLOUDFLARE_API = 'https://xpxc.qzz.io/api'; 
+<script>
+    const CLOUDFLARE_API = 'https://xpxc.qzz.io/api';
 
-// 網頁開啟時自動同步雲端資料
-window.onload = async function() {
-    const textarea = document.getElementById('codes');
-    try {
-        const response = await fetch(CLOUDFLARE_API);
-        if (response.ok) {
-            const dbCodes = await response.json();
-            if (dbCodes && dbCodes.length > 0) {
-                textarea.value = dbCodes.join('\n');
+    // 1. 網頁開啟時自動抓取雲端資料
+    window.onload = async function() {
+        const textarea = document.getElementById('codes');
+        try {
+            const response = await fetch(CLOUDFLARE_API);
+            if (response.ok) {
+                const dbCodes = await response.json();
+                if (dbCodes && dbCodes.length > 0) {
+                    textarea.value = dbCodes.join('\n');
+                }
             }
+        } catch (error) {
+            console.log("初始化同步失敗:", error);
         }
-    } catch (error) {
-        console.log("雲端無紀錄或同步失敗");
-    }
-};
+    };
 
-async function submit() {
-    const textarea = document.getElementById('codes');
-    const content = textarea.value.trim();
-    
-    if (!content) return alert("請輸入禮包碼");
+    // 2. 提交按鈕邏輯
+    async function submit() {
+        const textarea = document.getElementById('codes');
+        const btn = document.getElementById('submitBtn');
+        const content = textarea.value.trim();
+        
+        if (!content) return alert("請輸入禮包碼");
 
-    // 提示正在處理
-    const btn = document.querySelector('button');
-    const originalText = btn.innerText;
-    btn.innerText = "同步並提交中...";
-    btn.disabled = true;
+        btn.disabled = true;
+        btn.innerText = "同步並提交中...";
 
-    try {
-        // 只發送一次請求給 Worker，由 Worker 處理後續所有動作
-        const response = await fetch(CLOUDFLARE_API, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: content })
-        });
+        try {
+            // 發送請求給 Cloudflare Worker
+            const response = await fetch(CLOUDFLARE_API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: content })
+            });
 
-        if (response.ok) {
-            alert("提交成功！資料已同步至雲端並發送至後端。");
-        } else {
-            alert("提交失敗，請檢查 Worker 狀態。");
+            if (response.ok) {
+                alert("提交成功！資料已同步至雲端。");
+            } else {
+                alert("提交失敗，請檢查 API。");
+            }
+        } catch (error) {
+            alert("錯誤: " + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "提交並更新紀錄";
         }
-    } catch (error) {
-        alert("提交錯誤：" + error.message);
-    } finally {
-        btn.innerText = originalText;
-        btn.disabled = false;
     }
-}
+</script>
 
 </body>
 </html>
