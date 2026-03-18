@@ -1,7 +1,8 @@
 const API_URL = 'https://xpxc.qzz.io/api';
 
-// 頁面載入：先讀本地，再讀雲端並把逗號轉回換行
+// 頁面載入：讀取並轉換格式
 window.onload = async () => {
+    // 優先讀取本地快取
     const localData = localStorage.getItem('gift_codes');
     if (localData) document.getElementById('codes').value = localData;
 
@@ -9,56 +10,54 @@ window.onload = async () => {
         const r = await fetch(API_URL);
         const d = await r.json();
         if (d.code) {
-            // 將資料庫的逗號轉回網頁的換行
-            const formattedCode = d.code.split(',').join('\n');
-            document.getElementById('codes').value = formattedCode;
-            localStorage.setItem('gift_codes', formattedCode);
+            // 將雲端的逗號格式轉回換行顯示
+            const formatted = d.code.split(',').filter(s => s !== "").join('\n');
+            document.getElementById('codes').value = formatted;
+            localStorage.setItem('gift_codes', formatted);
         }
     } catch (e) {
-        console.log("雲端讀取失敗，使用本地存檔");
+        console.log("雲端讀取失敗，使用本地數據");
     }
 };
 
-// 儲存：把換行轉成逗號存入雲端
-async function saveToCloud(showMsg = true) {
+// 核心提交功能：同步雲端 + 請求 Worker 轉發
+async function submitData() {
     const textarea = document.getElementById('codes');
     const content = textarea.value.trim();
+    const btn = document.querySelector('.btn-submit');
     
-    // 轉成逗號格式
-    const csvFormat = content.split('\n')
-                             .map(s => s.trim())
-                             .filter(s => s !== "")
-                             .join(',');
+    if (!content) return alert("請輸入禮包碼");
 
+    btn.disabled = true;
+    btn.innerText = "同步轉發中...";
+    showStatus("正在連線伺服器...", "#007bff");
+
+    // 格式準備：
+    // 1. 雲端存檔用逗號 (,)
+    const csvFormat = content.split('\n').map(s => s.trim()).filter(s => s !== "").join(',');
+    // 2. 本地顯示用換行
     localStorage.setItem('gift_codes', content);
 
     try {
-        await fetch(API_URL, {
+        const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: csvFormat })
+            body: JSON.stringify({ code: csvFormat }) // 傳送 CSV 格式給 Worker
         });
-        if (showMsg) showStatus("☁️ 雲端已存為逗號格式", "#007bff");
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showStatus(`✅ 同步成功！回應：${result.backendMsg}`, "#28a745");
+        } else {
+            showStatus(`⚠️ 轉發異常：${result.backendMsg}`, "#dc3545");
+        }
     } catch (e) {
-        if (showMsg) showStatus("💾 僅存於本地", "#dc3545");
+        showStatus("❌ 網路連線錯誤", "#dc3545");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "提交並同步 API";
     }
-}
-
-// 提交：開啟分頁 (維持 @== 格式)
-function submitToTab() {
-    const content = document.getElementById('codes').value.trim();
-    if (!content) return alert("請輸入禮包碼");
-
-    saveToCloud(false);
-
-    const joined = content.split('\n')
-                          .map(s => s.trim())
-                          .filter(s => s !== "")
-                          .join('@==');
-    
-    const targetUrl = `http://47.96.230.2:9997/qqyxNew/addDHM?dhm=${encodeURIComponent(joined)}`;
-    window.open(targetUrl, '_blank');
-    showStatus("✅ 已開啟分頁提交", "#28a745");
 }
 
 function showStatus(msg, color) {
@@ -66,5 +65,4 @@ function showStatus(msg, color) {
     s.innerText = msg;
     s.style.color = color;
     s.style.display = "block";
-    setTimeout(() => { s.style.display = "none"; }, 3000);
 }
