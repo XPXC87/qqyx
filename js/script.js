@@ -1,4 +1,4 @@
-const API_URL = 'https://xpxc.qzz.io/api';
+const API_URL = 'http://xpxc.qzz.io/api';
 
 // 頁面載入：讀取 D1 數據 (CSV 格式) 並轉為換行顯示
 window.onload = async () => {
