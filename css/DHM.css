@@ -20,7 +20,7 @@ body {
 }
 
 .container {
-    width: 90%;
+    width: 95%;
     max-width: 420px;
     padding: 20px 0;
 }
@@ -109,6 +109,7 @@ button {
 
 button:active {
     transform: scale(0.96);
+    opacity: 0.8;
 }
 
 .status-box {
@@ -151,4 +152,5 @@ button:active {
 
 #status-content {
     word-break: break-all;
+    color: #ccc;
 }
