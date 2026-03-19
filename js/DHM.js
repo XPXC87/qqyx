@@ -1,6 +1,5 @@
 const WORKER_URL = 'https://xpxc.qzz.io/api';
-const TARGET_API = 'http://47.96.230.2:9997/qqyxNew/addDHM';
-
+const TARGET_API = '/qqyxNew/addDHM'; 
 // --- 1. 深淺色模式與初始化 ---
 function initTheme() {
     const savedTheme = localStorage.getItem('theme');
