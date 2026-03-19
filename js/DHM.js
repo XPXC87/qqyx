@@ -1,6 +1,6 @@
 const WORKER_URL = 'https://xpxc.qzz.io/api';
 // 把這裡改成相對路徑，這樣 Chrome 才會覺得這是一個「安全」的請求
-const TARGET_API = 'functions/qqxyNew/addDHM.js'; 
+const TARGET_API = 'qxyNew/addDHM.jsw'; 
 
 function initTheme() {
     const savedTheme = localStorage.getItem('theme');
