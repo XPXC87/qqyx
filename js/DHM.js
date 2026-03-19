@@ -1,6 +1,7 @@
 const WORKER_URL = 'https://xpxc.qzz.io/api';
-const TARGET_API = '/qqyxNew/addDHM.js'; 
-// --- 1. 深淺色模式與初始化 ---
+// 把這裡改成相對路徑，這樣 Chrome 才會覺得這是一個「安全」的請求
+const TARGET_API = '/qqyxNew/addDHM'; 
+
 function initTheme() {
     const savedTheme = localStorage.getItem('theme');
     const themeIcon = document.getElementById('theme-icon');
