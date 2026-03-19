@@ -117,6 +117,7 @@ textarea {
     margin-top: 15px;
 }
 
+/* --- 按鈕樣式優化 --- */
 button {
     padding: 14px;
     border-radius: 12px;
@@ -125,10 +126,36 @@ button {
     cursor: pointer;
     transition: all 0.2s;
     border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
-.btn-primary { background: var(--accent); color: var(--btn-text); flex: 2; }
-.btn-secondary { background: transparent; color: var(--text-dim); flex: 1; }
+/* 執行同步按鈕：跟隨主題主色 */
+.btn-primary { 
+    background: var(--accent); 
+    color: var(--btn-text); 
+    flex: 2; 
+}
+
+/* 清除按鈕：特別設定背景色 */
+.btn-secondary { 
+    background: rgba(128, 128, 128, 0.1); /* 給一個淡淡的底色 */
+    color: var(--text-dim); 
+    flex: 1; 
+}
+
+/* 當滑鼠移過或點擊清除按鈕時的變化 */
+.btn-secondary:active {
+    background: rgba(255, 68, 68, 0.1); /* 點擊時帶一點點紅，提醒是清除 */
+    color: #ff4444;
+}
+
+/* 讓按鈕內的圖示大小一致 */
+button span.icon {
+    font-size: 1.1rem;
+}
 
 button:active { transform: scale(0.96); opacity: 0.8; }
 
