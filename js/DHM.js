@@ -96,4 +96,4 @@ function clearAll() {
         updateLineCount();
         document.getElementById('status-box').style.display = "none";
     }
-}w
+}
