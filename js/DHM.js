@@ -80,7 +80,7 @@ async function submitData() {
         const response = await fetch(`${TARGET_API}?dhm=${encodeURIComponent(apiFormat)}`);
         const resultText = await response.text();
 
-        statusContent.innerHTML = `<b style="color:#00ff00">[成功] 操作完成</b><br>回應: ${resultText.trim()}`;
+        statusContent.innerHTML = `<b style="color:#00ff00">[成功] 操作完成</b><br>[服務器回應]:${resultText.trim()}`;
         localStorage.setItem('gift_codes', content);
     } catch (err) {
         statusContent.innerHTML = `<span style="color:var(--error)">[錯誤] 連線失敗: ${err.message}</span>`;
