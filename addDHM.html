@@ -32,12 +32,22 @@
         </div>
 
         <div id="status-box" class="status-box" style="display:none;">
-            <div class="status-header">
-                <span class="pulse"></span> 系統回傳
-            </div>
-            <div id="status-content">等待中...</div>
+    <div class="status-header">
+        <div class="window-controls">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
         </div>
+        <div class="status-title">
+            <span class="icon">🖥️</span> 系統執行日誌
+        </div>
+        <div class="status-time" id="current-time">00:00:00</div>
     </div>
+    
+    <div id="status-content">
+        <div style="color: #666;">等待指令輸入...</div>
+    </div>
+</div>
 </div>
 
 <script src="js/DHM.js"></script>
