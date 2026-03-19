@@ -76,8 +76,8 @@ async function submitData() {
 
         // C. 更新介面
         statusContent.innerHTML = `
-            <span style='color:#00ff00; font-weight:bold;'>[SUCCESS] 操作完成</span><br>
-            <span style='color:#00e5ff'>[SERVER] ${resultText.trim() || "無回傳文字"}</span>
+            <span style='color:#00ff00; font-weight:bold;'>[成功] 操作完成</span><br>
+            <span style='color:#00e5ff'>[服務器回應] ${resultText.trim() || "無回傳文字"}</span>
         `;
 
         // D. 儲存到本地
