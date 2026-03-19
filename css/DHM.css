@@ -1,11 +1,26 @@
 :root {
+    /* 深色模式變數 (預設) */
     --bg: #0a0a0a;
     --card: #141414;
     --border: #262626;
     --text-main: #ffffff;
     --text-dim: #888888;
     --accent: #ffffff;
+    --btn-text: #000000;
+    --input-bg: #000000;
     --error: #ff4444;
+}
+
+body.light-mode {
+    /* 淺色模式變數 */
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --border: #d2d2d7;
+    --text-main: #1d1d1f;
+    --text-dim: #86868b;
+    --accent: #0071e3; /* 蘋果藍，適合淺色 */
+    --btn-text: #ffffff;
+    --input-bg: #fbfbfd;
 }
 
 body {
@@ -17,6 +32,26 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* 主題切換按鈕 */
+.theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .container {
@@ -37,19 +72,12 @@ body {
     margin: 0;
 }
 
-.header p {
-    font-size: 0.7rem;
-    color: var(--text-dim);
-    letter-spacing: 2px;
-    margin-top: 5px;
-}
-
 .main-card {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 20px;
     padding: 20px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.3);
 }
 
 .input-header {
@@ -63,20 +91,16 @@ body {
 textarea {
     width: 100%;
     height: 240px;
-    background: #000;
+    background: var(--input-bg);
     border: 1px solid var(--border);
     border-radius: 12px;
-    color: #fff;
+    color: var(--text-main);
     padding: 15px;
     font-size: 16px;
     box-sizing: border-box;
     resize: none;
     outline: none;
     transition: 0.3s;
-}
-
-textarea:focus {
-    border-color: #555;
 }
 
 .action-group {
@@ -98,7 +122,7 @@ button {
 .btn-primary {
     flex: 2;
     background: var(--accent);
-    color: #000;
+    color: var(--btn-text);
 }
 
 .btn-secondary {
@@ -107,50 +131,20 @@ button {
     color: var(--text-dim);
 }
 
-button:active {
-    transform: scale(0.96);
-    opacity: 0.8;
-}
-
 .status-box {
     margin-top: 20px;
     padding: 15px;
-    background: #000;
+    background: var(--input-bg);
     border: 1px solid var(--border);
     border-radius: 12px;
-    font-size: 0.9rem;
-}
-
-.status-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.75rem;
-    color: var(--text-dim);
-    margin-bottom: 5px;
+    font-size: 0.85rem;
 }
 
 .pulse {
-    width: 6px;
-    height: 6px;
-    background: var(--text-dim);
+    width: 6px; height: 6px;
+    background: #00ff00;
     border-radius: 50%;
-    animation: blink 1s infinite;
+    animation: blink 1.5s infinite;
 }
 
-@keyframes blink {
-    50% { opacity: 0; }
-}
-
-.footer {
-    text-align: center;
-    margin-top: 25px;
-    font-size: 0.7rem;
-    color: var(--text-dim);
-    line-height: 1.8;
-}
-
-#status-content {
-    word-break: break-all;
-    color: #ccc;
-}
+@keyframes blink { 50% { opacity: 0.3; } }
