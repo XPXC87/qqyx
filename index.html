@@ -8,16 +8,13 @@
 <style>
 /* 讓並排的兩個按鈕撐滿與其他按鈕相同的總寬度，並均分比例 */
 .btn-row {
-display: flex;
+display: flex; 1;
 gap: 10px;
 width: 100%;
 }
-.btn {
+.btn-row .btn {
 flex: 1;
-width: 0;
-box-sizing: border-box;
-text-align: center;
-white-space: nowrap; / 防止文字換行導致高度變高 */
+width: auto;
 }
 </style>
 </head>
