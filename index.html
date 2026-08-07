@@ -1,74 +1,42 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>球球英雄腳本工具站</title>
-    <link rel="stylesheet" href="/css/main.css">
-    <style>
-        /* 確保 download-container 與其他按鈕一致 */
-        .download-container {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin: 10px 0;
-            width: 100%;
-        }
-        
-        /* 強制按鈕寬度相等並佔滿容器 */
-        .download-container .btn {
-            flex: 1;
-            text-align: center;
-            padding: 10px 0;
-            /* 假設原本的 .btn 有固定的寬度或限制，這裡使其與其他按鈕樣式一致 */
-            display: block; 
-            box-sizing: border-box;
-        }
-
-        /* 確保整體佈局按鈕寬度一致 */
-        .btn-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            width: 100%;
-            max-width: 400px; /* 根據截圖調整寬度 */
-            margin: 0 auto;
-        }
-        
-        .btn {
-            width: 100%;
-            display: block;
-            text-align: center;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>球球英雄腳本工具站</title>
+<link rel="stylesheet" href="/css/main.css">
+<style>
+/* 讓並排的兩個按鈕撐滿與其他按鈕相同的總寬度，並均分比例 */
+.btn-row {
+display: flex;
+gap: 10px;
+width: 100%;
+}
+.btn-row .btn {
+flex: 1;
+width: auto;
+}
+</style>
 </head>
 <body>
-
-    <button id="theme-toggle" onclick="toggleTheme()">切換淺色模式</button>
-
-    <h1>球球英雄腳本工具站</h1>
-    <p>所有工具皆只適用安卓與電腦</p>
-    
-    <div class="btn-group">
-        <a href="https://4v2dwd4peo.k.topthink.com/@qqyx/shipeideheqiutaozhuang.html" target="_blank" class="btn">適配球球套裝</a>
-        <a href="https://mega.nz/folder/kBc2zIwT#u4nl-K4ne_LWKfCF8UvJjw" target="_blank" class="btn">手機虛擬機下載</a>
-        
-        <div class="download-container">
-            <a href="http://47.96.230.2:5147/qqyx/downloadScript.html" target="_blank" class="btn">腳本下載</a>
-            <a href="https://www.123912.com/s/7P1rVv-qXQQd" target="_blank" class="btn">備用腳本下載</a>
-        </div>
-
-        <a href="https://line.me/ti/p/idhwCBZ_QQ" target="_blank" class="btn">加LINE購買</a>
-        <a href="https://mega.nz/folder/oJcniTzb#2q8jn1u5yTBOgX-cZ5fDcg" target="_blank" class="btn">免廣告/全皮膚下載</a>
-        <a href="/Videos/1.mp4" target="_blank" class="btn">免廣告/全皮膚安卓教學</a>
-        <a href="/Videos/2.mp4" target="_blank" class="btn">腳本安裝教學</a>
-    </div>
-
-    <div class="footer" style="margin-top: 40px; font-size: 12px; opacity: 0.5;">
-        BY XPXC
-    </div>
-
-    <script src="/js/app.js"></script>
+​<button id="theme-toggle" onclick="toggleTheme()">切換淺色模式</button>
+​<h1>球球英雄腳本工具站</h1>
+<p>所有工具皆只適用安卓與電腦</p>
+​<div class="btn-group">
+<a href="[https://4v2dwd4peo.k.topthink.com/@qqyx/shipeideheqiutaozhuang.html](https://4v2dwd4peo.k.topthink.com/@qqyx/shipeideheqiutaozhuang.html)" target="_blank" class="btn">適配球球套裝</a>
+<a href="[https://mega.nz/folder/kBc2zIwT#u4nl-K4ne_LWKfCF8UvJjw](https://mega.nz/folder/kBc2zIwT#u4nl-K4ne_LWKfCF8UvJjw)" target="_blank" class="btn">手機虛擬機下載</a>
+​<div class="btn-row">
+<a href="[http://47.96.230.2:5147/qqyx/downloadScript.html](http://47.96.230.2:5147/qqyx/downloadScript.html)" target="_blank" class="btn">腳本下載</a>
+<a href="[https://www.123912.com/s/7P1rVv-qXQQd](https://www.123912.com/s/7P1rVv-qXQQd)" target="_blank" class="btn">備用腳本下載</a>
+</div>
+​<a href="[https://line.me/ti/p/idhwCBZ_QQ](https://line.me/ti/p/idhwCBZ_QQ)" target="_blank" class="btn">加LINE購買</a>
+<a href="[https://mega.nz/folder/oJcniTzb#2q8jn1u5yTBOgX-cZ5fDcg](https://mega.nz/folder/oJcniTzb#2q8jn1u5yTBOgX-cZ5fDcg)" target="_blank" class="btn">免廣告/全皮膚下載</a>
+<a href="/Videos/1.mp4" target="_blank" class="btn">免廣告/全皮膚安卓教學</a>
+<a href="/Videos/2.mp4" target="_blank" class="btn">腳本安裝教學</a>
+</div>
+​<div class="footer" style="margin-top: 40px; font-size: 12px; opacity: 0.5;">
+BY XPXC
+</div>
+​<script src="/js/app.js"></script>
 </body>
 </html>
