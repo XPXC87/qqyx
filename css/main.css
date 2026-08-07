@@ -1,13 +1,12 @@
-/* 預設為深色風格 */
+/* 預設深色模式 */
 :root {
     --bg-color: #121212;
     --text-color: #e0e0e0;
     --btn-bg: #ffffff;
     --btn-text: #121212;
-    --accent-color: #ffcc00; /* 加入一點點球球英雄的電力黃 */
 }
 
-/* 淺色模式類別 */
+/* 淺色模式 */
 body.light-mode {
     --bg-color: #ffffff;
     --text-color: #333333;
@@ -15,69 +14,113 @@ body.light-mode {
     --btn-text: #ffffff;
 }
 
+/* 頁面 */
 body {
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    box-sizing: border-box;
+
     background-color: var(--bg-color);
     color: var(--text-color);
-    transition: background-color 0.3s ease, color 0.3s ease;
+
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     text-align: center;
-    padding: 20px;
-    margin: 0;
-    min-height: 100vh;
+
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
+    justify-content: flex-start;
+
+    transition: background-color .3s, color .3s;
 }
 
-h1 { 
-    margin-bottom: 10px; 
-    font-size: 24px;
-    letter-spacing: 1px;
+/* 標題 */
+h1 {
+    margin: 70px 0 10px;
+    font-size: 32px;
+    font-weight: bold;
 }
 
-p { margin-bottom: 30px; opacity: 0.8; }
+p {
+    margin: 0 0 30px;
+    opacity: .8;
+    font-size: 16px;
+}
 
+/* 按鈕容器 */
 .btn-group {
+    width: 100%;
+    max-width: 420px;
+
     display: flex;
     flex-direction: column;
     gap: 15px;
+}
+
+/* 並排按鈕 */
+.btn-row {
+    display: flex;
+    gap: 10px;
     width: 100%;
-    max-width: 300px;
 }
 
+.btn-row .btn {
+    flex: 1;
+}
+
+/* 按鈕 */
 .btn {
-    padding: 15px;
-    background-color: var(--btn-bg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 18px 15px;
+
+    background: var(--btn-bg);
     color: var(--btn-text);
+
     text-decoration: none;
-    border-radius: 8px;
-    font-size: 16px;
+    border-radius: 12px;
+
+    font-size: 20px;
     font-weight: bold;
-    transition: transform 0.1s, background-color 0.3s, color 0.3s;
-    border: none;
+
+    transition: transform .15s, background-color .3s, color .3s;
 }
 
-.btn:active { 
-    transform: scale(0.95);
-    opacity: 0.9;
+.btn:active {
+    transform: scale(.97);
 }
 
+/* 主題切換 */
 #theme-toggle {
-    position: absolute;
+    position: fixed;
     top: 20px;
     right: 20px;
-    background: none;
+
+    padding: 10px 16px;
+
+    background: transparent;
     border: 1px solid var(--text-color);
+    border-radius: 8px;
+
     color: var(--text-color);
-    padding: 8px 12px;
     cursor: pointer;
-    border-radius: 4px;
-    font-size: 14px;
-    transition: all 0.3s;
 }
 
 #theme-toggle:hover {
-    background-color: var(--text-color);
+    background: var(--text-color);
     color: var(--bg-color);
+}
+
+/* 頁尾 */
+.footer {
+    margin-top: 40px;
+    margin-bottom: 20px;
+    opacity: .5;
+    font-size: 12px;
 }
