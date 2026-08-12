@@ -51,7 +51,7 @@ p {
 /* 按鈕容器 */
 .btn-group {
     width: 100%;
-    max-width: 380px;
+    max-width: 300px;
 
     display: flex;
     flex-direction: column;
