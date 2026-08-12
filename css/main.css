@@ -62,7 +62,7 @@ p {
 .btn-row {
     display: flex;
     gap: 10px;
-    width: 100%;
+    width: auto;
 }
 
 .btn-row .btn {
@@ -75,7 +75,7 @@ p {
     justify-content: center;
     align-items: center;
 
-    width: 100%;
+    width: auto;
     box-sizing: border-box;
 
     padding: 18px 15px;
