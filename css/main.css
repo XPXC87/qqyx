@@ -62,7 +62,7 @@ p {
 /* 並排按鈕 */
 .btn-row {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     width: 100%;
 }
 
