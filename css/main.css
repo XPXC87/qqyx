@@ -65,10 +65,6 @@ p {
     width: 30%;
 }
 
-.btn-row .btn {
-    flex: 1;
-}
-
 /* 按鈕 */
 .btn {
     display: flex;
