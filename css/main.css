@@ -55,6 +55,7 @@ p {
 
     display: flex;
     align-self: center;
+    align-items: center;
     gap: 15px;
 }
 
