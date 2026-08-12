@@ -53,9 +53,7 @@ p {
     width: 100%;
     max-width: 360px;
 
-    display: flex;
-    align-self: center;
-    align-items: center;
+    display: flex:
     gap: 15px;
 }
 
