@@ -63,7 +63,6 @@ p {
     display: flex;
     gap: 4px;
     width: 30%;
-    align-self: center;
 }
 
 /* 按鈕 */
