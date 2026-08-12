@@ -88,6 +88,11 @@ p {
     transition: transform .15s, background-color .3s, color .3s;
 }
 
+.btn-row .btn {
+    width: auto;
+    flex: 1;
+}
+
 .btn:active {
     transform: scale(.97);
 }
