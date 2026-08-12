@@ -38,14 +38,14 @@ body {
 /* 標題 */
 h1 {
     margin: 60px 0 10px;
-    font-size: 32px;
+    font-size: 40px;
     font-weight: bold;
 }
 
 p {
     margin: 0 0 30px;
     opacity: .8;
-    font-size: 16px;
+    font-size: 20px;
 }
 
 /* 按鈕容器 */
