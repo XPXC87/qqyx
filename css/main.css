@@ -52,11 +52,10 @@ p {
 .btn-group {
     width: 65%;
     max-width: 360px;
-
+    font-size: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
-
     gap: 15px;
 }
 
@@ -72,19 +71,13 @@ p {
     display: flex;
     justify-content: center;
     align-items: center;
-
     width: 100%;
     box-sizing: border-box;
-
     padding: 10px 8px;
-
     background: var(--btn-bg);
     color: var(--btn-text);
-
     text-decoration: none;
     border-radius: 12px;
-
-    font-size: 14px;
     font-weight: bold;
 
     transition: transform .15s, background-color .3s, color .3s;
