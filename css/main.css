@@ -62,7 +62,7 @@ p {
 .btn-row {
     display: flex;
     gap: 6px;
-    width: 60%;
+    width: 30%;
 }
 
 .btn-row .btn {
