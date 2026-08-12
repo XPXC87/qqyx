@@ -50,8 +50,8 @@ p {
 
 /* 按鈕容器 */
 .btn-group {
-    width: auto;
-    max-width: 420px;
+    width: 100%;
+    max-width: 380px;
 
     display: flex;
     flex-direction: column;
@@ -61,8 +61,8 @@ p {
 /* 並排按鈕 */
 .btn-row {
     display: flex;
-    gap: 10px;
-    width: auto;
+    gap: 6px;
+    width: 100%;
 }
 
 .btn-row .btn {
@@ -75,7 +75,7 @@ p {
     justify-content: center;
     align-items: center;
 
-    width: auto;
+    width: 100%;
     box-sizing: border-box;
 
     padding: 18px 15px;
