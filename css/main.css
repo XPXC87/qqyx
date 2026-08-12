@@ -56,7 +56,7 @@ p {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 15px;
+    gap: 8px;
 }
 
 /* 並排按鈕 */
@@ -79,7 +79,6 @@ p {
     text-decoration: none;
     border-radius: 12px;
     font-weight: bold;
-
     transition: transform .15s, background-color .3s, color .3s;
 }
 
