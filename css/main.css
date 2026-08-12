@@ -50,7 +50,7 @@ p {
 
 /* 按鈕容器 */
 .btn-group {
-    width: 80%;
+    width: 60%;
     max-width: 240px;
 
     display: flex;
@@ -62,7 +62,7 @@ p {
 .btn-row {
     display: flex;
     gap: 6px;
-    width: 80%;
+    width: 60%;
 }
 
 .btn-row .btn {
@@ -75,7 +75,7 @@ p {
     justify-content: center;
     align-items: center;
 
-    width: 80%;
+    width: 60%;
     box-sizing: border-box;
 
     padding: 10px 8px;
