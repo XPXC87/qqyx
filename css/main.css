@@ -78,7 +78,7 @@ p {
     width: 100%;
     box-sizing: border-box;
 
-    padding: 13px 12px;
+    padding: 14px 12px;
 
     background: var(--btn-bg);
     color: var(--btn-text);
@@ -86,7 +86,7 @@ p {
     text-decoration: none;
     border-radius: 12px;
 
-    font-size: 12px;
+    font-size: 14px;
     font-weight: bold;
 
     transition: transform .15s, background-color .3s, color .3s;
