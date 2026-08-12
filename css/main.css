@@ -50,7 +50,7 @@ p {
 
 /* 按鈕容器 */
 .btn-group {
-    width: 100%;
+    width: auto;
     max-width: 420px;
 
     display: flex;
