@@ -64,7 +64,7 @@ p {
 .btn-row {
     display: flex;
     gap: 4px;
-    width: 30%;
+    width: 60%;
 }
 
 /* 按鈕 */
