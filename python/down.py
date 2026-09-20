@@ -73,40 +73,6 @@ session.headers.update({
 
 
 # ============================================================
-# 單一執行鎖
-# ============================================================
-# GitHub Actions 已經有 concurrency；這裡再加一層本地鎖，避免同一個
-# runner/工作目錄意外同時啟動兩個 down.py，造成兩個 APK GET。
-LOCK_PATH = DOWNLOAD_DIR / ".download.lock"
-
-
-def acquire_process_lock():
-    DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
-
-    try:
-        fd = os.open(
-            LOCK_PATH,
-            os.O_CREAT | os.O_EXCL | os.O_WRONLY,
-        )
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            f.write(str(os.getpid()))
-        print(f"🔒 已取得單一執行鎖：{LOCK_PATH}")
-    except FileExistsError:
-        raise RuntimeError(
-            "偵測到另一個 down.py 正在執行，已拒絕第二個流程。"
-        )
-
-
-def release_process_lock():
-    try:
-        if LOCK_PATH.exists():
-            LOCK_PATH.unlink()
-            print(f"🔓 已釋放執行鎖：{LOCK_PATH}")
-    except Exception as e:
-        print(f"⚠️ 無法釋放執行鎖：{e}")
-
-
-# ============================================================
 # R2 設定檢查
 # ============================================================
 
