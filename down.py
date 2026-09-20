@@ -22,9 +22,9 @@ DOWNLOAD_DIR = Path.cwd() / "downloads"
 APK_PATH = DOWNLOAD_DIR / "球球英雄脚本.apk"
 
 # R2
-R2_ACCOUNT_ID = os.getenv("ffe4b2080a30225540740e53bf5627e3")
-R2_ACCESS_KEY_ID = os.getenv("36bd19aeb7dbfff245db6dfe2bbba669")
-R2_SECRET_ACCESS_KEY = os.getenv("a30ffe8451760d26565714b7d304125859276279e9f83227f20755ec160e244a")
+R2_ACCOUNT_ID = os.getenv("R2_ACCOUNT_ID")
+R2_ACCESS_KEY_ID = os.getenv("R2_ACCESS_KEY_ID")
+R2_SECRET_ACCESS_KEY = os.getenv("R2_SECRET_ACCESS_KEY")
 
 R2_BUCKET = "qqyx"
 R2_OBJECT = "球球英雄脚本.apk"
