@@ -71,41 +71,6 @@ session.headers.update({
     "Accept": "*/*",
 })
 
-
-# ============================================================
-# 單一執行鎖
-# ============================================================
-# GitHub Actions 已經有 concurrency；這裡再加一層本地鎖，避免同一個
-# runner/工作目錄意外同時啟動兩個 down.py，造成兩個 APK GET。
-LOCK_PATH = DOWNLOAD_DIR / ".download.lock"
-
-
-def acquire_process_lock():
-    DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
-
-    try:
-        fd = os.open(
-            LOCK_PATH,
-            os.O_CREAT | os.O_EXCL | os.O_WRONLY,
-        )
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            f.write(str(os.getpid()))
-        print(f"🔒 已取得單一執行鎖：{LOCK_PATH}")
-    except FileExistsError:
-        raise RuntimeError(
-            "偵測到另一個 down.py 正在執行，已拒絕第二個流程。"
-        )
-
-
-def release_process_lock():
-    try:
-        if LOCK_PATH.exists():
-            LOCK_PATH.unlink()
-            print(f"🔓 已釋放執行鎖：{LOCK_PATH}")
-    except Exception as e:
-        print(f"⚠️ 無法釋放執行鎖：{e}")
-
-
 # ============================================================
 # R2 設定檢查
 # ============================================================
@@ -134,28 +99,6 @@ def check_r2_config():
     print("✅ R2 Secrets 已設定")
     print(f"🪣 Bucket：{R2_BUCKET}")
     print(f"📄 Object：{R2_OBJECT}")
-
-
-# ============================================================
-# 清理舊檔
-# ============================================================
-
-def prepare_download_dir():
-    DOWNLOAD_DIR.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    for file in DOWNLOAD_DIR.glob("*.apk"):
-        try:
-            file.unlink()
-            print(f"🗑️ 清除舊 APK：{file}")
-        except Exception as e:
-            print(
-                f"⚠️ 無法刪除舊 APK："
-                f"{file} - {e}"
-            )
-
 
 # ============================================================
 # 取得 5147 入口頁
@@ -331,63 +274,6 @@ def get_lanzou_url(api_url):
         pass
 
     return download_url
-
-
-# ============================================================
-# 保存診斷資料
-# ============================================================
-
-def save_debug(page, prefix):
-
-    print()
-    print("🛠️ 保存診斷資料...")
-
-    try:
-
-        html_path = (
-            Path.cwd()
-            / f"{prefix}.html"
-        )
-
-        html_path.write_text(
-            page.content(),
-            encoding="utf-8",
-        )
-
-        print(
-            f"📄 HTML：{html_path}"
-        )
-
-    except Exception as e:
-
-        print(
-            f"⚠️ HTML 保存失敗：{e}"
-        )
-
-    try:
-
-        screenshot_path = (
-            Path.cwd()
-            / f"{prefix}.png"
-        )
-
-        page.screenshot(
-            path=str(screenshot_path),
-            full_page=True,
-            timeout=5000,
-        )
-
-        print(
-            f"📸 Screenshot："
-            f"{screenshot_path}"
-        )
-
-    except Exception as e:
-
-        print(
-            f"⚠️ Screenshot 保存失敗：{e}"
-        )
-
 
 # ============================================================
 # 從頁面取得 APK URL
@@ -626,54 +512,6 @@ def get_verified_apk_url(download_url):
 
                     raise
 
-
-# ============================================================
-# 執行環境清理
-# ============================================================
-
-def cleanup_runtime():
-    print()
-    print("=" * 60)
-    print("🧹 清理執行環境")
-    print("=" * 60)
-
-    import gc
-    import subprocess
-
-    try:
-        gc.collect()
-        print("✅ Python GC 已執行")
-    except Exception as e:
-        print(f"⚠️ Python GC 清理失敗：{e}")
-
-    # GitHub Actions Linux Runner 上，確認 Chromium/Chrome 沒有殘留。
-    # 不碰其他系統程序。
-    for process_name in ("chromium", "chromium-headless-shell"):
-        try:
-            subprocess.run(
-                ["pkill", "-9", "-f", process_name],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            )
-        except Exception:
-            pass
-
-    print("✅ Chromium 殘留程序檢查完成")
-
-    # 清除本次下載可能留下的暫存檔。
-    if DOWNLOAD_DIR.exists():
-        for pattern in ("*.tmp", "*.part", "*.crdownload"):
-            for file in DOWNLOAD_DIR.glob(pattern):
-                try:
-                    file.unlink()
-                    print(f"🗑️ 清除暫存：{file}")
-                except Exception as e:
-                    print(f"⚠️ 無法清除暫存：{file} - {e}")
-
-    print("✅ 執行環境清理完成")
-
-
 # ============================================================
 # 下載真正 APK
 # ============================================================
@@ -684,26 +522,10 @@ def download_apk(apk_url, referer=None):
     print("⑦ 下載 APK")
     print("=" * 60)
 
-    print(f"🌐 APK URL：{apk_url[:200]}")
-
     DOWNLOAD_DIR.mkdir(
         parents=True,
         exist_ok=True,
     )
-
-    # 只使用一個暫存檔，正式檔案只會在完整下載並驗證後產生。
-    # 因此同一輪流程不會同時寫入兩份 APK。
-    temp_path = DOWNLOAD_DIR / "download.tmp"
-
-    if temp_path.exists():
-        try:
-            temp_path.unlink()
-            print(f"🗑️ 清除上一輪暫存檔：{temp_path}")
-        except Exception as e:
-            raise RuntimeError(
-                f"無法清除舊暫存檔：{temp_path} - {e}"
-            )
-
     max_retries = 5
 
     for attempt in range(1, max_retries + 1):
@@ -840,19 +662,6 @@ def download_apk(apk_url, referer=None):
                     raise RuntimeError(
                         "下載檔案大小為 0"
                     )
-
-                # APK 本質上是 ZIP；正常 APK 通常以 PK\x03\x04 開頭。
-                with open(temp_path, "rb") as f:
-                    magic = f.read(4)
-
-                print(f"APK Magic：{magic!r}")
-
-                if magic != b"PK\x03\x04":
-                    raise RuntimeError(
-                        "下載內容不是有效 APK/ZIP"
-                    )
-
-                print("✅ APK Magic 正確")
 
                 if APK_PATH.exists():
                     try:
@@ -1007,65 +816,6 @@ def upload_to_r2(apk_path):
         f"📄 Object：{R2_OBJECT}"
     )
 
-
-# ============================================================
-# 清理
-# ============================================================
-
-def cleanup():
-
-    print()
-    print("=" * 60)
-    print("⑨ 清理本地檔案")
-    print("=" * 60)
-
-    if APK_PATH.exists():
-
-        try:
-
-            APK_PATH.unlink()
-
-            print(
-                f"🗑️ 已刪除："
-                f"{APK_PATH}"
-            )
-
-        except Exception as e:
-
-            print(
-                f"⚠️ APK 刪除失敗："
-                f"{e}"
-            )
-
-    else:
-
-        print(
-            "ℹ️ 沒有主要 APK"
-        )
-
-    if DOWNLOAD_DIR.exists():
-
-        for file in DOWNLOAD_DIR.iterdir():
-
-            try:
-
-                if file.is_file():
-
-                    file.unlink()
-
-                    print(
-                        f"🗑️ 已刪除："
-                        f"{file}"
-                    )
-
-            except Exception as e:
-
-                print(
-                    f"⚠️ 無法刪除："
-                    f"{file} - {e}"
-                )
-
-
 # ============================================================
 # Main
 # ============================================================
@@ -1141,8 +891,6 @@ def main():
         sys.exit(1)
 
     finally:
-
-        cleanup()
 
         if lock_acquired:
             release_process_lock()
