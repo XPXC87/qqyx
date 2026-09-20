@@ -822,6 +822,7 @@ def download_apk(apk_url, referer=None):
             with session.get(
                 apk_url,
                 headers=headers,
+                stream=True,
                 timeout=(10, 10),
                 allow_redirects=True,
             ) as response:
