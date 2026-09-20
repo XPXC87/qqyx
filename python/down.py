@@ -32,7 +32,7 @@ APK_PATH = DOWNLOAD_DIR / "球球英雄脚本.apk"
 BROWSER_RETRIES = 3
 
 # 等待網頁元素
-PAGE_LOAD_TIMEOUT = 10000
+PAGE_LOAD_TIMEOUT = 15000
 ELEMENT_TIMEOUT = 30000
 
 # ============================================================
@@ -469,10 +469,10 @@ def get_verified_apk_url(download_url):
 
                     print()
                     print(
-                        "⏳ 3 秒後重新嘗試..."
+                        "⏳ 5 秒後重新嘗試..."
                     )
 
-                    time.sleep(3)
+                    time.sleep(5)
 
                     try:
                         page.close()
