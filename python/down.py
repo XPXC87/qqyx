@@ -334,6 +334,108 @@ def get_apk_href(page):
 # Chromium 正常驗證
 # ============================================================
 
+def save_page_debug(page, attempt, stage):
+    """保存目前 Chromium 頁面的 HTML、URL 與截圖，方便 GitHub Actions 診斷。"""
+    debug_dir = Path.cwd() / "debug"
+    debug_dir.mkdir(parents=True, exist_ok=True)
+
+    prefix = debug_dir / f"dmpdmp_{attempt}_{stage}"
+
+    try:
+        (prefix.with_suffix(".txt")).write_text(
+            f"URL: {page.url}\n"
+            f"TITLE: {page.title()}\n",
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
+
+    try:
+        (prefix.with_suffix(".html")).write_text(
+            page.content(),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
+
+    try:
+        page.screenshot(
+            path=str(prefix.with_suffix(".png")),
+            full_page=True,
+            timeout=10000,
+        )
+    except Exception:
+        pass
+
+
+def find_working_page(context, preferred_page=None):
+    """
+    在目前 BrowserContext 中尋找真正的下載頁。
+    優先尋找包含 #sub 或 #go a 的頁面。
+    避免把 about:blank 當成下載頁。
+    """
+
+    pages = list(context.pages)
+
+    # 先找真正已經出現下載 DOM 的頁面。
+    for candidate in pages:
+        try:
+            if (
+                candidate.locator("#go a").count() > 0
+                or candidate.locator("#sub").count() > 0
+            ):
+                return candidate
+        except Exception:
+            continue
+
+    # 再找非 about:blank 的頁面。
+    for candidate in pages:
+        try:
+            if candidate.url and candidate.url != "about:blank":
+                return candidate
+        except Exception:
+            continue
+
+    # 最後才回傳原本的 page，讓呼叫端決定是否失敗。
+    return preferred_page
+
+
+def wait_for_download_page(context, page, timeout=30000):
+    """
+    等待 dmpdmp 頁面真正可用。
+    會同時檢查 context 中新開出的分頁。
+    """
+
+    deadline = time.monotonic() + (timeout / 1000)
+
+    while time.monotonic() < deadline:
+
+        candidate = find_working_page(
+            context,
+            preferred_page=page,
+        )
+
+        if candidate is not None:
+            try:
+                # #sub 出現代表驗證頁已經載入。
+                if candidate.locator("#sub").count() > 0:
+                    candidate.locator("#sub").wait_for(
+                        state="visible",
+                        timeout=1000,
+                    )
+                    return candidate
+
+                # #go a 出現代表甚至已經完成驗證。
+                if candidate.locator("#go a").count() > 0:
+                    return candidate
+            except Exception:
+                pass
+
+        time.sleep(0.5)
+
+    return None
+
+
 def get_verified_apk_url(download_url):
 
     print()
@@ -358,14 +460,20 @@ def get_verified_apk_url(download_url):
                 "Chrome/124.0.0.0 "
                 "Safari/537.36"
             ),
+            viewport={
+                "width": 1280,
+                "height": 900,
+            },
+            locale="zh-TW",
+            timezone_id="Asia/Taipei",
         )
-
-        page = context.new_page()
 
         for attempt in range(
             1,
             BROWSER_RETRIES + 1,
         ):
+
+            page = context.new_page()
 
             print()
             print("=" * 60)
@@ -377,32 +485,97 @@ def get_verified_apk_url(download_url):
 
             try:
 
-                print(
-                    "🌐 開啟下載頁面..."
-                )
+                print("🌐 開啟下載頁面...")
+                print(f"🔗 URL：{download_url[:300]}")
+
+                goto_timed_out = False
 
                 try:
-
-                    page.goto(
+                    response = page.goto(
                         download_url,
                         wait_until="commit",
-                        timeout=5000,
+                        timeout=15000,
                     )
+
+                    if response:
+                        print(
+                            f"HTTP：{response.status}"
+                        )
 
                 except PlaywrightTimeoutError:
-
+                    goto_timed_out = True
                     print(
-                        "⚠️ 頁面載入超時，"
-                        "但繼續檢查頁面..."
+                        "⚠️ page.goto 等待超時，"
+                        "繼續檢查 BrowserContext 中的頁面..."
                     )
+
+                # 給 redirect / popup / JS 一點時間完成。
+                time.sleep(2)
+
+                working_page = wait_for_download_page(
+                    context,
+                    page,
+                    timeout=30000,
+                )
+
+                if working_page is None:
+                    print()
+                    print("❌ 找不到可用的 dmpdmp 頁面")
+
+                    for index, candidate in enumerate(
+                        context.pages,
+                        start=1,
+                    ):
+                        try:
+                            print(
+                                f"📄 Page {index}: "
+                                f"{candidate.url}"
+                            )
+                        except Exception:
+                            pass
+
+                    save_page_debug(
+                        page,
+                        attempt,
+                        "no_working_page",
+                    )
+
+                    raise RuntimeError(
+                        "dmpdmp 頁面沒有正常載入；"
+                        "BrowserContext 中沒有找到 #sub 或 #go a"
+                    )
+
+                page = working_page
 
                 print()
                 print("目前頁面：")
+                print(page.url)
 
-                try:
-                    print(page.url)
-                except Exception:
-                    pass
+                if goto_timed_out:
+                    print(
+                        "ℹ️ 原始 goto 曾超時，"
+                        "但已找到實際可用頁面。"
+                    )
+
+                # 明確禁止把 about:blank 當成正常下載頁。
+                if page.url == "about:blank":
+                    if page.locator("#sub").count() == 0:
+                        save_page_debug(
+                            page,
+                            attempt,
+                            "about_blank",
+                        )
+
+                        raise RuntimeError(
+                            "目前仍是 about:blank，"
+                            "且沒有 #sub"
+                        )
+
+                    print(
+                        "⚠️ URL 仍為 about:blank，"
+                        "但頁面內已有 #sub；"
+                        "繼續檢查 DOM。"
+                    )
 
                 print()
                 print("=" * 60)
@@ -413,37 +586,128 @@ def get_verified_apk_url(download_url):
                     "#sub"
                 )
 
-                sub_button.wait_for(
-                    state="visible",
-                    timeout=ELEMENT_TIMEOUT,
-                )
-
-                print(
-                    "✅ 找到「验证并下载」"
-                )
-
-                try:
-
+                # 如果驗證連結已經直接出現，就不用再次點擊。
+                if page.locator("#go a").count() > 0:
                     print(
-                        "按鈕文字："
-                        f"{sub_button.inner_text()}"
+                        "✅ 已經找到「立即下载」，"
+                        "跳過「验证并下载」"
+                    )
+                else:
+                    sub_button.wait_for(
+                        state="visible",
+                        timeout=ELEMENT_TIMEOUT,
                     )
 
-                except Exception:
-                    pass
+                    print(
+                        "✅ 找到「验证并下载」"
+                    )
+
+                    try:
+                        print(
+                            "按鈕文字："
+                            f"{sub_button.inner_text()}"
+                        )
+                    except Exception:
+                        pass
+
+                    print()
+                    print(
+                        "🖱️ 點擊「验证并下载」..."
+                    )
+
+                    # 正常點擊網站自己的驗證按鈕。
+                    sub_button.click(
+                        no_wait_after=True
+                    )
+
+                    print(
+                        "✅ 已點擊"
+                        "「验证并下载」"
+                    )
 
                 print()
-                print(
-                    "🖱️ 點擊「验证并下载」..."
+                print("=" * 60)
+                print("⑥ 等待「立即下载」")
+                print("=" * 60)
+
+                # 點擊後可能同頁更新，也可能開新分頁。
+                deadline = time.monotonic() + (
+                    ELEMENT_TIMEOUT / 1000
                 )
 
-                sub_button.click(
-                    no_wait_after=True
-                )
+                apk_page = None
+
+                while time.monotonic() < deadline:
+
+                    for candidate in context.pages:
+
+                        try:
+                            link = candidate.locator(
+                                "#go a"
+                            )
+
+                            if link.count() > 0:
+                                link.wait_for(
+                                    state="visible",
+                                    timeout=1000,
+                                )
+
+                                apk_page = candidate
+                                break
+
+                        except Exception:
+                            continue
+
+                    if apk_page is not None:
+                        break
+
+                    time.sleep(0.5)
+
+                if apk_page is None:
+                    print()
+                    print(
+                        "❌ 30 秒內沒有出現 "
+                        "#go a"
+                    )
+
+                    print()
+                    print("目前所有 Page：")
+
+                    for index, candidate in enumerate(
+                        context.pages,
+                        start=1,
+                    ):
+                        try:
+                            print(
+                                f"📄 Page {index}: "
+                                f"{candidate.url}"
+                            )
+                        except Exception:
+                            pass
+
+                    # 保存每個目前分頁的診斷資料。
+                    for index, candidate in enumerate(
+                        context.pages,
+                        start=1,
+                    ):
+                        try:
+                            save_page_debug(
+                                candidate,
+                                attempt,
+                                f"after_click_{index}",
+                            )
+                        except Exception:
+                            pass
+
+                    raise RuntimeError(
+                        "點擊「验证并下载」後，"
+                        "沒有出現「立即下载」(#go a)"
+                    )
+
+                page = apk_page
 
                 print(
-                    "✅ 已點擊"
-                    "「验证并下载」"
+                    "✅ 找到「立即下载」所在頁面"
                 )
 
                 apk_url = get_apk_href(
@@ -465,27 +729,47 @@ def get_verified_apk_url(download_url):
                     f"{type(e).__name__}: {e}"
                 )
 
+                # 額外列出所有分頁狀態。
+                print()
+                print("📄 Browser Pages：")
+
+                for index, candidate in enumerate(
+                    context.pages,
+                    start=1,
+                ):
+                    try:
+                        print(
+                            f"  Page {index}: "
+                            f"{candidate.url}"
+                        )
+                    except Exception:
+                        pass
+
                 if attempt < BROWSER_RETRIES:
 
                     print()
                     print(
-                        "⏳ 5 秒後重新嘗試..."
+                        "⏳ 5 秒後重新建立 Chromium Page..."
                     )
 
                     time.sleep(5)
 
-                    try:
-                        page.close()
-                    except Exception:
-                        pass
-
-                    page = context.new_page()
+                    # 關閉本次所有分頁，
+                    # 下一輪重新建立乾淨 page。
+                    for candidate in list(
+                        context.pages
+                    ):
+                        try:
+                            candidate.close()
+                        except Exception:
+                            pass
 
                 else:
 
                     browser.close()
 
                     raise
+
 
 # ============================================================
 # 下載真正 APK
