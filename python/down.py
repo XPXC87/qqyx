@@ -486,7 +486,6 @@ def get_verified_apk_url(download_url):
             try:
 
                 print("🌐 開啟下載頁面...")
-                print(f"🔗 URL：{download_url[:300]}")
 
                 goto_timed_out = False
 
