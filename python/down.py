@@ -647,9 +647,7 @@ def download_apk(apk_url, referer=None):
                 apk_url,
                 headers=headers,
                 stream=True,
-                # 4 秒建立連線；連線建立後 5 秒內沒有收到任何資料
-                # 就會觸發 ReadTimeout。
-                timeout=(5, 5),
+                timeout=(10, 10),
                 allow_redirects=True,
             ) as response:
 
@@ -781,7 +779,7 @@ def download_apk(apk_url, referer=None):
 
         except requests.exceptions.ReadTimeout as e:
             print()
-            print("⏱️ 連續 5 秒沒有收到資料")
+            print("⏱️ 連續 10 秒沒有收到資料")
             print(f"⚠️ ReadTimeout：{e}")
 
 
@@ -792,7 +790,7 @@ def download_apk(apk_url, referer=None):
 
         except requests.exceptions.ConnectTimeout as e:
             print()
-            print("⏱️ 建立下載連線超過 5 秒")
+            print("⏱️ 建立下載連線超過 10 秒")
             print(f"⚠️ ConnectTimeout：{e}")
 
 
