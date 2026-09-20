@@ -497,8 +497,6 @@ def download_apk(apk_url, referer=None):
     print("⑦ 下載 APK")
     print("=" * 60)
 
-    print(f"🌐 APK URL：{apk_url[:200]}")
-
     DOWNLOAD_DIR.mkdir(
         parents=True,
         exist_ok=True,
@@ -553,7 +551,6 @@ def download_apk(apk_url, referer=None):
                     f"({response_elapsed:.2f} 秒)"
                 )
                 print(f"HTTP : {response.status_code}")
-                print(f"Final: {response.url}")
                 print(
                     "Type : "
                     f"{response.headers.get('Content-Type')}"
