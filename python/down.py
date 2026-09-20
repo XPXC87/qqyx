@@ -32,8 +32,8 @@ APK_PATH = DOWNLOAD_DIR / "球球英雄脚本.apk"
 BROWSER_RETRIES = 3
 
 # 等待網頁元素
-PAGE_LOAD_TIMEOUT = 15000
-ELEMENT_TIMEOUT = 15000
+PAGE_LOAD_TIMEOUT = 5000
+ELEMENT_TIMEOUT = 5000
 
 # ============================================================
 # Cloudflare R2
