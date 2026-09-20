@@ -3,7 +3,7 @@ name: 腳本自動同步
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/20 * * * *"
+    - cron: "*/5 * * * *"
 jobs:
   sync:
     runs-on: ubuntu-latest
