@@ -29,10 +29,10 @@ DOWNLOAD_DIR = Path.cwd() / "downloads"
 APK_PATH = DOWNLOAD_DIR / "球球英雄脚本.apk"
 
 # dmpdmp 最多重試次數
-BROWSER_RETRIES = 5
+BROWSER_RETRIES = 10
 
 # 等待網頁元素
-PAGE_LOAD_TIMEOUT = 15000
+PAGE_LOAD_TIMEOUT = 20000
 ELEMENT_TIMEOUT = 30000
 
 # ============================================================
@@ -117,7 +117,7 @@ def get_source_page():
 
     response = session.get(
         SOURCE_PAGE,
-        timeout=15,
+        timeout=20,
         allow_redirects=True,
     )
 
