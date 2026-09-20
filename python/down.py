@@ -277,63 +277,6 @@ def get_lanzou_url(api_url):
 
     return download_url
 
-
-# ============================================================
-# 保存診斷資料
-# ============================================================
-
-def save_debug(page, prefix):
-
-    print()
-    print("🛠️ 保存診斷資料...")
-
-    try:
-
-        html_path = (
-            Path.cwd()
-            / f"{prefix}.html"
-        )
-
-        html_path.write_text(
-            page.content(),
-            encoding="utf-8",
-        )
-
-        print(
-            f"📄 HTML：{html_path}"
-        )
-
-    except Exception as e:
-
-        print(
-            f"⚠️ HTML 保存失敗：{e}"
-        )
-
-    try:
-
-        screenshot_path = (
-            Path.cwd()
-            / f"{prefix}.png"
-        )
-
-        page.screenshot(
-            path=str(screenshot_path),
-            full_page=True,
-            timeout=5000,
-        )
-
-        print(
-            f"📸 Screenshot："
-            f"{screenshot_path}"
-        )
-
-    except Exception as e:
-
-        print(
-            f"⚠️ Screenshot 保存失敗：{e}"
-        )
-
-
 # ============================================================
 # 從頁面取得 APK URL
 # ============================================================
@@ -534,12 +477,7 @@ def get_verified_apk_url(download_url):
                 )
 
                 if attempt < BROWSER_RETRIES:
-
-                    try:
-                        save_debug(
-                            page,
-                            f"debug_retry_{attempt}",
-                        )
+                    
                     except Exception:
                         pass
 
@@ -559,11 +497,6 @@ def get_verified_apk_url(download_url):
 
                 else:
 
-                    try:
-                        save_debug(
-                            page,
-                            "debug_final",
-                        )
                     except Exception:
                         pass
 
