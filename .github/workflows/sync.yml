@@ -84,7 +84,7 @@ jobs:
           echo "========================================"
           echo "🐍 安裝 Python 運行庫"
           echo "========================================"
-          pip install -r requirements.txt
+          pip install -r python/requirements.txt
 
 
       # ============================================================
