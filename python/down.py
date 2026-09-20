@@ -638,14 +638,16 @@ def download_apk(apk_url):
 
     max_retries = 3
 
-    # TCP 連線最多等待 20 秒
-    connect_timeout = 20
+    # TCP 連線最多等待 30 秒
+    connect_timeout = 30
 
-    # 單次讀取若 30 秒沒有收到任何資料就中止
-    read_timeout = 30
+    # 單次讀取若 180 秒沒有收到任何資料就中止
+    read_timeout = 180
 
-    # 整個 HTTP 請求最多允許 90 秒
-    hard_timeout = 90
+    # 整個 HTTP 請求最多允許 10 分鐘
+    # 目前伺服器實際下載速度約 0.2 MB/s，
+    # 47 MB APK 正常就可能需要約 4 分鐘。
+    hard_timeout = 600
 
     # 失敗後等待 3～5 分鐘再重試
     retry_wait_min = 180
@@ -704,7 +706,7 @@ def download_apk(apk_url):
                 flush=True,
             )
             print(
-                f"⏱️ 整體 HTTP 最長時間：{hard_timeout} 秒",
+                f"⏱️ 整體 HTTP 最長時間：{hard_timeout // 60} 分鐘",
                 flush=True,
             )
 
