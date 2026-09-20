@@ -117,7 +117,7 @@ def get_source_page():
 
     response = session.get(
         SOURCE_PAGE,
-        timeout=30,
+        timeout=15,
         allow_redirects=True,
     )
 
@@ -217,7 +217,7 @@ def get_lanzou_url(api_url):
 
     response = session.get(
         api_url,
-        timeout=15,
+        timeout=30,
         allow_redirects=True,
     )
 
