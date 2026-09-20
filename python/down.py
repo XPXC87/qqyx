@@ -362,7 +362,7 @@ def save_page_debug(page, attempt, stage):
         page.screenshot(
             path=str(prefix.with_suffix(".png")),
             full_page=True,
-            timeout=10000,
+            timeout=15000,
         )
     except Exception:
         pass
