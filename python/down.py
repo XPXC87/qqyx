@@ -29,7 +29,7 @@ DOWNLOAD_DIR = Path.cwd() / "downloads"
 APK_PATH = DOWNLOAD_DIR / "球球英雄脚本.apk"
 
 # dmpdmp 最多重試次數
-BROWSER_RETRIES = 3
+BROWSER_RETRIES = 5
 
 # 等待網頁元素
 PAGE_LOAD_TIMEOUT = 15000
@@ -217,7 +217,7 @@ def get_lanzou_url(api_url):
 
     response = session.get(
         api_url,
-        timeout=30,
+        timeout=15,
         allow_redirects=True,
     )
 
@@ -507,7 +507,7 @@ def download_apk(apk_url, referer=None):
     temp_path = DOWNLOAD_DIR / "download.tmp"
 
 
-    max_retries = 5
+    max_retries = 10
 
     for attempt in range(1, max_retries + 1):
         print()
