@@ -801,9 +801,7 @@ def download_apk(apk_url, referer=None):
                 "User-Agent": (
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                     "AppleWebKit/537.36 "
-                    "(KHTML, like Gecko) "
-                    "Chrome/124.0.0.0 "
-                    "Safari/537.36"
+                    "Chrome/124.0.0.12"
                 ),
                 "Accept": "*/*",
                 "Accept-Encoding": "identity",
