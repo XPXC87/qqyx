@@ -62,11 +62,9 @@ session = requests.Session()
 
 session.headers.update({
     "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 "
-        "(KHTML, like Gecko) "
-        "Chrome/124.0.0.0 "
-        "Safari/537.36"
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        "AppleWebKit/537.36"
+        "Chrome/124.0.0.0"
     ),
     "Accept": "*/*",
 })
@@ -421,7 +419,7 @@ def wait_for_download_page(context, page, timeout=30000):
                 if candidate.locator("#sub").count() > 0:
                     candidate.locator("#sub").wait_for(
                         state="visible",
-                        timeout=1000,
+                        timeout=10000,
                     )
                     return candidate
 
@@ -455,10 +453,8 @@ def get_verified_apk_url(download_url):
             accept_downloads=True,
             user_agent=(
                 "Mozilla/5.0 (X11; Linux x86_64) "
-                "AppleWebKit/537.36 "
-                "(KHTML, like Gecko) "
-                "Chrome/124.0.0.0 "
-                "Safari/537.36"
+                "AppleWebKit/537.36"
+                "Chrome/124.0.0.0"
             ),
             viewport={
                 "width": 1280,
@@ -799,9 +795,9 @@ def download_apk(apk_url, referer=None):
         try:
             headers = {
                 "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 "
-                    "Chrome/124.0.0.12"
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+                    "AppleWebKit/537.36"
+                    "Chrome/124.0.0.0"
                 ),
                 "Accept": "*/*",
                 "Accept-Encoding": "identity",
