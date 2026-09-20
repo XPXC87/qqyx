@@ -5,7 +5,7 @@ on:
   schedule:
     - cron: "*/20 * * * *"
 jobs:
-  sync:
+  同步apk:
     runs-on: ubuntu-latest
 
     env:
