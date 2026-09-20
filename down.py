@@ -28,10 +28,10 @@ KNOWN_DOWNLOAD_API = (
 # 本地暫存目錄
 DOWNLOAD_DIR = Path.cwd() / "downloads"
 
-# 本地 APK 名稱
+# 本地 APK 檔名
 APK_PATH = DOWNLOAD_DIR / "球球英雄脚本.apk"
 
-# 等待真正 APK 下載的最長時間
+# 等待 APK 下載的最長時間
 DOWNLOAD_TIMEOUT = 180
 
 
@@ -39,15 +39,14 @@ DOWNLOAD_TIMEOUT = 180
 # Cloudflare R2
 # ============================================================
 
-# 從 GitHub Secrets 取得
 R2_ACCOUNT_ID = os.getenv("R2_ACCOUNT_ID")
 R2_ACCESS_KEY_ID = os.getenv("R2_ACCESS_KEY_ID")
 R2_SECRET_ACCESS_KEY = os.getenv("R2_SECRET_ACCESS_KEY")
 
-# ★ 你指定的 R2 Bucket
+# 你指定的 Bucket
 R2_BUCKET = "qqyx"
 
-# ★ 你指定的 R2 Object
+# 你指定的 Object
 R2_OBJECT = "球球英雄脚本.apk"
 
 if R2_ACCOUNT_ID:
@@ -64,25 +63,24 @@ else:
 
 session = requests.Session()
 
-session.headers.update(
-    {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 "
-            "(KHTML, like Gecko) "
-            "Chrome/124.0.0.0 "
-            "Safari/537.36"
-        ),
-        "Accept": "*/*",
-    }
-)
+session.headers.update({
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 "
+        "(KHTML, like Gecko) "
+        "Chrome/124.0.0.0 "
+        "Safari/537.36"
+    ),
+    "Accept": "*/*",
+})
 
 
 # ============================================================
-# 檢查 R2 設定
+# R2 設定檢查
 # ============================================================
 
 def check_r2_config():
+
     print()
     print("🔧 檢查 R2 設定...")
 
@@ -109,23 +107,27 @@ def check_r2_config():
 
 
 # ============================================================
-# 建立下載目錄
+# 準備下載目錄
 # ============================================================
 
 def prepare_download_dir():
+
     DOWNLOAD_DIR.mkdir(
         parents=True,
         exist_ok=True
     )
 
-    # 清理舊 APK
     for file in DOWNLOAD_DIR.glob("*.apk"):
+
         try:
             file.unlink()
+
             print(
                 f"🗑️ 清除舊 APK：{file}"
             )
+
         except Exception as e:
+
             print(
                 f"⚠️ 無法刪除舊 APK："
                 f"{file} - {e}"
@@ -133,16 +135,19 @@ def prepare_download_dir():
 
 
 # ============================================================
-# 取得 5147 入口頁面
+# 取得 5147 頁面
 # ============================================================
 
 def get_source_page():
+
     print()
     print("=" * 60)
     print("① 請求 5147 入口頁面")
     print("=" * 60)
 
-    print(f"URL: {SOURCE_PAGE}")
+    print(
+        f"URL: {SOURCE_PAGE}"
+    )
 
     response = session.get(
         SOURCE_PAGE,
@@ -173,17 +178,18 @@ def get_source_page():
 
 
 # ============================================================
-# 從 HTML 找 9997 API
+# 找 9997 API
 # ============================================================
 
 def find_download_api(html):
+
     print()
     print("=" * 60)
     print("② 尋找 9997 API")
     print("=" * 60)
 
-    # 已知 API
     if "9997/version/getDownloUrl" in html:
+
         print(
             f"✅ 找到 API："
             f"{KNOWN_DOWNLOAD_API}"
@@ -191,7 +197,6 @@ def find_download_api(html):
 
         return KNOWN_DOWNLOAD_API
 
-    # 備用搜尋
     patterns = [
         r"""['"]([^'"]*9997[^'"]*)['"]""",
         r"""['"]([^'"]*getDownloUrl[^'"]*)['"]""",
@@ -241,10 +246,11 @@ def find_download_api(html):
 
 
 # ============================================================
-# 請求 9997
+# 取得 dmpdmp URL
 # ============================================================
 
 def get_lanzou_url(api_url):
+
     print()
     print("=" * 60)
     print("③ 請求 9997 取得最新下載 URL")
@@ -286,12 +292,10 @@ def get_lanzou_url(api_url):
             "9997 API 回傳空內容"
         )
 
-    # 去除可能的引號
     text = text.strip(
         "\"' \r\n\t"
     )
 
-    # 嘗試找 URL
     urls = re.findall(
         r'https?://[^\s"\'<>]+',
         text
@@ -312,17 +316,25 @@ def get_lanzou_url(api_url):
         )
 
     print()
-    print("✅ 成功取得下載 URL")
-    print(download_url)
+    print(
+        "✅ 成功取得下載 URL"
+    )
+
+    # 不把完整臨時 token 再大量輸出
+    print(
+        f"🌐 網域："
+        f"{download_url.split('/')[2]}"
+    )
 
     return download_url
 
 
 # ============================================================
-# 儲存瀏覽器診斷資料
+# 保存診斷資料
 # ============================================================
 
 def save_debug(page, prefix):
+
     try:
 
         html_path = (
@@ -401,7 +413,7 @@ def browser_download(download_url):
         page = context.new_page()
 
         # ----------------------------------------------------
-        # 監聽下載事件
+        # 監聽下載
         # ----------------------------------------------------
 
         def handle_download(download):
@@ -431,11 +443,7 @@ def browser_download(download_url):
 
         print()
         print(
-            "🌐 開啟下載頁面："
-        )
-
-        print(
-            download_url
+            "🌐 開啟下載頁面..."
         )
 
         try:
@@ -470,8 +478,7 @@ def browser_download(download_url):
         )
 
         # ====================================================
-        # 第一階段
-        # 「验证并下载」
+        # 第一階段：驗證並下載
         # ====================================================
 
         print()
@@ -537,8 +544,7 @@ def browser_download(download_url):
             raise
 
         # ====================================================
-        # 第二階段
-        # 等待「立即下载」
+        # 第二階段：等待立即下載
         # ====================================================
 
         print()
@@ -548,12 +554,14 @@ def browser_download(download_url):
 
         try:
 
-            go_button = page.locator(
-                "#go"
+            # 注意：
+            # 這裡不是點 #go
+            # 而是點真正的 <a>
+            go_link = page.locator(
+                "#go a"
             )
 
-            # 驗證完成後 #go 才會出現
-            go_button.wait_for(
+            go_link.wait_for(
                 state="visible",
                 timeout=60000
             )
@@ -563,38 +571,53 @@ def browser_download(download_url):
             )
 
             print(
-                "✅ 找到「立即下载」"
+                "✅ 找到「立即下载」連結"
             )
 
-            # 顯示按鈕文字
+            # ------------------------------------------------
+            # 取得真正 APK href
+            # ------------------------------------------------
+
             try:
 
+                href = (
+                    go_link.get_attribute(
+                        "href"
+                    )
+                )
+
+                if href:
+
+                    print(
+                        "✅ 已取得 APK 下載連結"
+                    )
+
+                    print(
+                        "🌐 APK 網域："
+                        f"{href.split('/')[2]}"
+                    )
+
+                    if ".apk" in href.lower():
+
+                        print(
+                            "✅ href 看起來是 APK"
+                        )
+
+            except Exception as e:
+
                 print(
-                    "按鈕文字："
-                    f"{go_button.inner_text()}"
+                    f"⚠️ 讀取 href 失敗："
+                    f"{e}"
                 )
-
-            except Exception:
-                pass
-
-            # 顯示 href
-            try:
-
-                href = page.locator(
-                    "#go a"
-                ).get_attribute(
-                    "href"
-                )
-
-                print(
-                    f"目前 href：{href}"
-                )
-
-            except Exception:
-                pass
 
             # ------------------------------------------------
-            # 點擊「立即下载」
+            # 第二次點擊
+            #
+            # 重要：
+            # no_wait_after=True
+            #
+            # 防止 Playwright 因為 APK 導航
+            # 一直等待 navigation 而 timeout
             # ------------------------------------------------
 
             print()
@@ -602,7 +625,9 @@ def browser_download(download_url):
                 "🖱️ 點擊「立即下载」..."
             )
 
-            go_button.click()
+            go_link.click(
+                no_wait_after=True
+            )
 
             print(
                 "✅ 已點擊「立即下载」"
@@ -612,7 +637,7 @@ def browser_download(download_url):
 
             print()
             print(
-                "❌ 驗證後沒有出現"
+                "❌ 無法點擊"
                 "「立即下载」"
             )
 
@@ -625,22 +650,29 @@ def browser_download(download_url):
                 "目前頁面："
             )
 
-            print(
-                page.url
-            )
+            try:
+                print(page.url)
+            except Exception:
+                pass
 
-            save_debug(
-                page,
-                "debug_no_go"
-            )
+            # 頁面如果正在導航，
+            # content() 有可能暫時不能讀取
+            try:
+
+                save_debug(
+                    page,
+                    "debug_no_go"
+                )
+
+            except Exception:
+                pass
 
             browser.close()
 
             raise
 
         # ====================================================
-        # 第三階段
-        # 等待真正 APK 下載
+        # 第三階段：等待下載
         # ====================================================
 
         print()
@@ -676,7 +708,7 @@ def browser_download(download_url):
                 break
 
         # ----------------------------------------------------
-        # 沒有下載
+        # 沒有偵測到 download event
         # ----------------------------------------------------
 
         if (
@@ -690,7 +722,7 @@ def browser_download(download_url):
             )
 
             print(
-                "❌ 沒有偵測到 APK 下載"
+                "❌ 沒有偵測到下載事件"
             )
 
             print()
@@ -698,14 +730,24 @@ def browser_download(download_url):
                 "目前頁面："
             )
 
-            print(
-                page.url
-            )
+            try:
 
-            save_debug(
-                page,
-                "debug_no_download"
-            )
+                print(
+                    page.url
+                )
+
+            except Exception:
+                pass
+
+            try:
+
+                save_debug(
+                    page,
+                    "debug_no_download"
+                )
+
+            except Exception:
+                pass
 
             browser.close()
 
@@ -744,7 +786,7 @@ def browser_download(download_url):
         browser.close()
 
     # ========================================================
-    # 檢查 APK 是否存在
+    # 驗證 APK 是否存在
     # ========================================================
 
     if not APK_PATH.exists():
@@ -800,7 +842,7 @@ def browser_download(download_url):
 
 
 # ============================================================
-# 上傳 R2
+# 上傳 Cloudflare R2
 # ============================================================
 
 def upload_to_r2(apk_path):
@@ -829,7 +871,7 @@ def upload_to_r2(apk_path):
         )
 
     # --------------------------------------------------------
-    # 建立 R2 S3 Client
+    # 建立 R2 Client
     # --------------------------------------------------------
 
     s3 = boto3.client(
@@ -889,7 +931,7 @@ def cleanup():
     print("=" * 60)
 
     # --------------------------------------------------------
-    # 刪除指定 APK
+    # 刪除主要 APK
     # --------------------------------------------------------
 
     if APK_PATH.exists():
@@ -959,25 +1001,25 @@ def main():
     try:
 
         # ----------------------------------------------------
-        # 1. R2 設定
+        # 1. R2
         # ----------------------------------------------------
 
         check_r2_config()
 
         # ----------------------------------------------------
-        # 2. 準備下載目錄
+        # 2. 下載目錄
         # ----------------------------------------------------
 
         prepare_download_dir()
 
         # ----------------------------------------------------
-        # 3. 取得 5147 頁面
+        # 3. 5147
         # ----------------------------------------------------
 
         html = get_source_page()
 
         # ----------------------------------------------------
-        # 4. 找 9997 API
+        # 4. 9997
         # ----------------------------------------------------
 
         api_url = find_download_api(
@@ -985,7 +1027,7 @@ def main():
         )
 
         # ----------------------------------------------------
-        # 5. 取得最新 dmpdmp URL
+        # 5. dmpdmp
         # ----------------------------------------------------
 
         download_url = get_lanzou_url(
@@ -993,7 +1035,7 @@ def main():
         )
 
         # ----------------------------------------------------
-        # 6. Chromium + 兩階段按鈕
+        # 6. Chromium
         # ----------------------------------------------------
 
         apk_path = browser_download(
@@ -1001,7 +1043,7 @@ def main():
         )
 
         # ----------------------------------------------------
-        # 7. 上傳 R2
+        # 7. R2
         # ----------------------------------------------------
 
         upload_to_r2(
@@ -1031,7 +1073,7 @@ def main():
     finally:
 
         # ----------------------------------------------------
-        # 不論成功 / 失敗都清理
+        # 無論成功或失敗都清理
         # ----------------------------------------------------
 
         cleanup()
