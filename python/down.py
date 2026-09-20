@@ -29,11 +29,11 @@ DOWNLOAD_DIR = Path.cwd() / "downloads"
 APK_PATH = DOWNLOAD_DIR / "球球英雄脚本.apk"
 
 # dmpdmp 最多重試次數
-BROWSER_RETRIES = 2
+BROWSER_RETRIES = 3
 
 # 等待網頁元素
 PAGE_LOAD_TIMEOUT = 30000
-ELEMENT_TIMEOUT = 30000
+ELEMENT_TIMEOUT = 120000
 
 # ============================================================
 # Cloudflare R2
@@ -70,6 +70,40 @@ session.headers.update({
     ),
     "Accept": "*/*",
 })
+
+
+# ============================================================
+# 單一執行鎖
+# ============================================================
+# GitHub Actions 已經有 concurrency；這裡再加一層本地鎖，避免同一個
+# runner/工作目錄意外同時啟動兩個 down.py，造成兩個 APK GET。
+LOCK_PATH = DOWNLOAD_DIR / ".download.lock"
+
+
+def acquire_process_lock():
+    DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+    try:
+        fd = os.open(
+            LOCK_PATH,
+            os.O_CREAT | os.O_EXCL | os.O_WRONLY,
+        )
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(str(os.getpid()))
+        print(f"🔒 已取得單一執行鎖：{LOCK_PATH}")
+    except FileExistsError:
+        raise RuntimeError(
+            "偵測到另一個 down.py 正在執行，已拒絕第二個流程。"
+        )
+
+
+def release_process_lock():
+    try:
+        if LOCK_PATH.exists():
+            LOCK_PATH.unlink()
+            print(f"🔓 已釋放執行鎖：{LOCK_PATH}")
+    except Exception as e:
+        print(f"⚠️ 無法釋放執行鎖：{e}")
 
 
 # ============================================================
@@ -468,10 +502,8 @@ def get_verified_apk_url(download_url):
 
                     page.goto(
                         download_url,
-                        wait_until=(
-                            "domcontentloaded"
-                        ),
-                        timeout=PAGE_LOAD_TIMEOUT,
+                        wait_until="commit",
+                        timeout=30000,
                     )
 
                 except PlaywrightTimeoutError:
@@ -598,101 +630,86 @@ def get_verified_apk_url(download_url):
 # ============================================================
 # 下載真正 APK
 # ============================================================
-
-def download_apk(apk_url):
+def download_apk(apk_url, referer=None):
 
     print()
     print("=" * 60)
     print("⑦ 下載 APK")
     print("=" * 60)
 
-    print(
-        "🌐 APK URL："
-        f"{apk_url[:200]}"
-    )
+    print(f"🌐 APK URL：{apk_url[:200]}")
 
     DOWNLOAD_DIR.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    temp_path = (
-        DOWNLOAD_DIR
-        / "download.tmp"
-    )
+    # 只使用一個暫存檔，正式檔案只會在完整下載並驗證後產生。
+    # 因此同一輪流程不會同時寫入兩份 APK。
+    temp_path = DOWNLOAD_DIR / "download.tmp"
 
     if temp_path.exists():
-
         try:
             temp_path.unlink()
-        except Exception:
-            pass
-
-    # --------------------------------------------------------
-    # 下載重試設定
-    #
-    # 規則：
-    # 1. 最多下載 3 次
-    # 2. 建立 HTTPS 連線最多等待 30 秒
-    # 3. 下載過程連續 30 秒沒有收到任何資料就判定中斷
-    # 4. 發生錯誤後立即重新請求 APK
-    # 5. 重新請求會從頭開始下載，最多 3 次
-    # --------------------------------------------------------
+            print(f"🗑️ 清除上一輪暫存檔：{temp_path}")
+        except Exception as e:
+            raise RuntimeError(
+                f"無法清除舊暫存檔：{temp_path} - {e}"
+            )
 
     max_retries = 3
 
-    for attempt in range(
-        1,
-        max_retries + 1,
-    ):
-
+    for attempt in range(1, max_retries + 1):
         print()
-        print(
-            f"📥 APK 下載 "
-            f"{attempt}/{max_retries}"
-        )
+        print(f"📥 APK 下載 {attempt}/{max_retries}")
+        print("🔒 本次流程只建立一個 APK HTTP GET 連線")
+        print("🔌 正在建立下載連線...")
 
         try:
-
             headers = {
                 "User-Agent": (
-                    "Mozilla/5.0 "
-                    "(Windows NT 10.0; Win64; x64) "
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                     "AppleWebKit/537.36 "
                     "(KHTML, like Gecko) "
                     "Chrome/124.0.0.0 "
                     "Safari/537.36"
                 ),
-                "Referer": (
-                    "https://slsstm2.dmpdmp.com/"
-                ),
                 "Accept": "*/*",
+                "Accept-Encoding": "identity",
+                "Connection": "close",
             }
+
+            # 如果知道產生 APK 連結的頁面，就使用真正的頁面作為 Referer。
+            # 不再使用固定的 slsstm2.dmpdmp.com，避免 Referer 不匹配。
+            if referer:
+                headers["Referer"] = referer
+
+            request_started = time.monotonic()
+
+            print("⏳ 等待伺服器回應...")
 
             with session.get(
                 apk_url,
                 headers=headers,
                 stream=True,
-                # 連線最多等待 30 秒。
-                # 下載過程中如果連續 30 秒完全沒有收到任何資料，
-                # requests 會觸發 ReadTimeout，然後立即進行下一次請求。
-                timeout=(
-                    30,
-                    30,
-                ),
+                # 15 秒建立連線；連線建立後 30 秒內沒有收到任何資料
+                # 就會觸發 ReadTimeout。
+                timeout=(15, 30),
                 allow_redirects=True,
             ) as response:
 
-                print(
-                    f"HTTP : "
-                    f"{response.status_code}"
-                )
+                response_elapsed = time.monotonic() - request_started
 
+                print(
+                    f"✅ 已取得 HTTP 回應 "
+                    f"({response_elapsed:.2f} 秒)"
+                )
+                print(f"HTTP : {response.status_code}")
+                print(f"Final: {response.url}")
                 print(
                     "Type : "
                     f"{response.headers.get('Content-Type')}"
                 )
-
                 print(
                     "Length: "
                     f"{response.headers.get('Content-Length')}"
@@ -700,178 +717,163 @@ def download_apk(apk_url):
 
                 response.raise_for_status()
 
-                total = response.headers.get(
-                    "Content-Length"
-                )
-
-                if total:
-                    total = int(total)
-                else:
+                total_header = response.headers.get("Content-Length")
+                try:
+                    total = int(total_header) if total_header else None
+                except (TypeError, ValueError):
                     total = None
 
                 downloaded = 0
-                last_report = 0
+                last_report_time = time.monotonic()
+                download_started = time.monotonic()
 
-                with open(
-                    temp_path,
-                    "wb",
-                ) as f:
-
+                with open(temp_path, "wb") as f:
                     for chunk in response.iter_content(
-                        chunk_size=1024 * 1024
+                        chunk_size=256 * 1024
                     ):
-
                         if not chunk:
                             continue
 
                         f.write(chunk)
+                        downloaded += len(chunk)
 
-                        downloaded += len(
-                            chunk
-                        )
+                        now = time.monotonic()
 
-                        # 每 5 MB 或最後顯示一次
+                        # 每 5 秒顯示一次，而不是每 5 MB。
+                        # 這樣即使下載速度很慢，也不會看起來像完全卡死。
                         if (
-                            downloaded
-                            - last_report
-                            >= 5 * 1024 * 1024
+                            now - last_report_time >= 5
+                            or (
+                                total is not None
+                                and downloaded >= total
+                            )
                         ):
-
-                            last_report = (
-                                downloaded
+                            elapsed = max(
+                                now - download_started,
+                                0.001,
                             )
-
-                            mb = (
-                                downloaded
-                                / 1024
-                                / 1024
-                            )
+                            speed_mbps = (
+                                downloaded / 1024 / 1024
+                            ) / elapsed
 
                             if total:
-
-                                total_mb = (
-                                    total
-                                    / 1024
-                                    / 1024
-                                )
-
                                 percent = (
-                                    downloaded
-                                    / total
-                                    * 100
+                                    downloaded / total * 100
                                 )
-
+                                total_mb = (
+                                    total / 1024 / 1024
+                                )
+                                downloaded_mb = (
+                                    downloaded / 1024 / 1024
+                                )
                                 print(
-                                    f"📦 "
-                                    f"{mb:.2f} MB / "
+                                    f"📦 {downloaded_mb:.2f} MB / "
                                     f"{total_mb:.2f} MB "
-                                    f"({percent:.1f}%)"
+                                    f"({percent:.1f}%) | "
+                                    f"{speed_mbps:.2f} MB/s"
                                 )
-
                             else:
-
+                                downloaded_mb = (
+                                    downloaded / 1024 / 1024
+                                )
                                 print(
-                                    f"📦 "
-                                    f"{mb:.2f} MB"
+                                    f"📦 {downloaded_mb:.2f} MB | "
+                                    f"{speed_mbps:.2f} MB/s"
                                 )
 
-            file_size = temp_path.stat().st_size
+                            last_report_time = now
 
+                file_size = temp_path.stat().st_size
+
+                print()
+                print(
+                    f"📦 下載完成："
+                    f"{file_size / 1024 / 1024:.2f} MB"
+                )
+
+                if file_size == 0:
+                    raise RuntimeError(
+                        "下載檔案大小為 0"
+                    )
+
+                # APK 本質上是 ZIP；正常 APK 通常以 PK\x03\x04 開頭。
+                with open(temp_path, "rb") as f:
+                    magic = f.read(4)
+
+                print(f"APK Magic：{magic!r}")
+
+                if magic != b"PK\x03\x04":
+                    raise RuntimeError(
+                        "下載內容不是有效 APK/ZIP"
+                    )
+
+                print("✅ APK Magic 正確")
+
+                if APK_PATH.exists():
+                    try:
+                        APK_PATH.unlink()
+                    except Exception as e:
+                        raise RuntimeError(
+                            f"無法替換舊 APK：{APK_PATH} - {e}"
+                        )
+
+                temp_path.replace(APK_PATH)
+
+                print()
+                print(f"✅ APK 已保存：{APK_PATH}")
+
+                return APK_PATH
+
+        except requests.exceptions.ReadTimeout as e:
             print()
-            print(
-                f"📦 下載完成："
-                f"{file_size / 1024 / 1024:.2f} MB"
-            )
+            print("⏱️ 連續 30 秒沒有收到資料")
+            print(f"⚠️ ReadTimeout：{e}")
 
-            if file_size == 0:
-
-                raise RuntimeError(
-                    "下載檔案大小為 0"
-                )
-
-            # ------------------------------------------------
-            # APK Magic 檢查
-            # ------------------------------------------------
-
-            with open(
-                temp_path,
-                "rb",
-            ) as f:
-
-                magic = f.read(4)
-
-            print(
-                f"APK Magic：{magic!r}"
-            )
-
-            if magic != b"PK\x03\x04":
-
-                raise RuntimeError(
-                    "下載內容不是有效 APK/ZIP"
-                )
-
-            print(
-                "✅ APK Magic 正確"
-            )
-
-            # ------------------------------------------------
-            # 改成正式檔名
-            # ------------------------------------------------
-
-            if APK_PATH.exists():
-
+            if temp_path.exists():
                 try:
-                    APK_PATH.unlink()
+                    temp_path.unlink()
+                    print("🗑️ 已刪除不完整暫存檔")
                 except Exception:
                     pass
 
-            temp_path.rename(
-                APK_PATH
-            )
+            if attempt < max_retries:
+                print("🔄 不等待，立即重新建立單一下載連線...")
+                continue
+            raise
 
+        except requests.exceptions.ConnectTimeout as e:
             print()
-            print(
-                f"✅ APK 已保存："
-                f"{APK_PATH}"
-            )
+            print("⏱️ 建立下載連線超過 15 秒")
+            print(f"⚠️ ConnectTimeout：{e}")
 
-            return APK_PATH
-
-        except requests.exceptions.ReadTimeout as e:
-
-            print()
-            print(
-                "⚠️ 下載連續 30 秒沒有收到資料"
-            )
-            print(
-                "🔄 立即重新請求 APK..."
-            )
-            print(
-                f"{type(e).__name__}: {e}"
-            )
-
-            # 本次下載已經不完整，刪掉暫存檔。
-            # 下一次會重新建立 HTTP GET，從頭下載。
             if temp_path.exists():
-
                 try:
                     temp_path.unlink()
                 except Exception:
                     pass
 
             if attempt < max_retries:
-
-                print(
-                    f"📥 重新請求："
-                    f"{attempt + 1}/{max_retries}"
-                )
-
+                print("🔄 不等待，立即重新建立單一下載連線...")
                 continue
+            raise
 
+        except requests.exceptions.ConnectionError as e:
+            print()
+            print("❌ APK 連線錯誤")
+            print(f"⚠️ ConnectionError：{e}")
+
+            if temp_path.exists():
+                try:
+                    temp_path.unlink()
+                except Exception:
+                    pass
+
+            if attempt < max_retries:
+                print("🔄 不等待，立即重新建立單一下載連線...")
+                continue
             raise
 
         except Exception as e:
-
             print()
             print(
                 f"❌ APK 下載失敗："
@@ -879,21 +881,14 @@ def download_apk(apk_url):
             )
 
             if temp_path.exists():
-
                 try:
                     temp_path.unlink()
                 except Exception:
                     pass
 
             if attempt < max_retries:
-
-                print(
-                    "🔄 立即重新嘗試下載..."
-                )
-
-                # 其他網路錯誤也不等待，直接重試。
+                print("🔄 不等待，立即重新建立單一下載連線...")
                 continue
-
             raise
 
 
@@ -1038,8 +1033,12 @@ def main():
     print("=" * 60)
 
     success = False
+    lock_acquired = False
 
     try:
+
+        acquire_process_lock()
+        lock_acquired = True
 
         # 1
         check_r2_config()
@@ -1067,7 +1066,8 @@ def main():
 
         # 7
         apk_path = download_apk(
-            apk_url
+            apk_url,
+            referer=download_url,
         )
 
         # 8
@@ -1098,6 +1098,9 @@ def main():
     finally:
 
         cleanup()
+
+        if lock_acquired:
+            release_process_lock()
 
         print()
 
