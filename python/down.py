@@ -634,9 +634,9 @@ def download_apk(apk_url):
     # 規則：
     # 1. 最多下載 3 次
     # 2. 建立 HTTPS 連線最多等待 30 秒
-    # 3. 連線成功後，不限制整體下載時間
-    # 4. 下載中不因 read timeout 自動中斷
-    # 5. 發生錯誤後立即進行下一次重試
+    # 3. 下載過程連續 30 秒沒有收到任何資料就判定中斷
+    # 4. 發生錯誤後立即重新請求 APK
+    # 5. 重新請求會從頭開始下載，最多 3 次
     # --------------------------------------------------------
 
     max_retries = 3
@@ -673,11 +673,12 @@ def download_apk(apk_url):
                 apk_url,
                 headers=headers,
                 stream=True,
-                # 只限制建立 HTTPS 連線時間。
-                # 連線成功後不限制下載時間，讓慢速伺服器可以持續下載。
+                # 連線最多等待 30 秒。
+                # 下載過程中如果連續 30 秒完全沒有收到任何資料，
+                # requests 會觸發 ReadTimeout，然後立即進行下一次請求。
                 timeout=(
                     30,
-                    None,
+                    30,
                 ),
                 allow_redirects=True,
             ) as response:
@@ -836,6 +837,39 @@ def download_apk(apk_url):
 
             return APK_PATH
 
+        except requests.exceptions.ReadTimeout as e:
+
+            print()
+            print(
+                "⚠️ 下載連續 30 秒沒有收到資料"
+            )
+            print(
+                "🔄 立即重新請求 APK..."
+            )
+            print(
+                f"{type(e).__name__}: {e}"
+            )
+
+            # 本次下載已經不完整，刪掉暫存檔。
+            # 下一次會重新建立 HTTP GET，從頭下載。
+            if temp_path.exists():
+
+                try:
+                    temp_path.unlink()
+                except Exception:
+                    pass
+
+            if attempt < max_retries:
+
+                print(
+                    f"📥 重新請求："
+                    f"{attempt + 1}/{max_retries}"
+                )
+
+                continue
+
+            raise
+
         except Exception as e:
 
             print()
@@ -857,12 +891,10 @@ def download_apk(apk_url):
                     "🔄 立即重新嘗試下載..."
                 )
 
-                # 不等待，直接進入下一次下載
+                # 其他網路錯誤也不等待，直接重試。
                 continue
 
-            else:
-
-                raise
+            raise
 
 
 # ============================================================
