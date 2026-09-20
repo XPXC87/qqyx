@@ -1,9 +1,16 @@
 import os
+import random
 import re
 import sys
 import time
 from pathlib import Path
 from urllib.parse import urljoin
+
+# GitHub Actions 即時顯示日誌
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+except Exception:
+    pass
 
 import requests
 import boto3
@@ -611,7 +618,8 @@ def download_apk(apk_url):
 
     print(
         "🌐 APK URL："
-        f"{apk_url[:200]}"
+        f"{apk_url[:200]}",
+        flush=True,
     )
 
     DOWNLOAD_DIR.mkdir(
@@ -624,26 +632,26 @@ def download_apk(apk_url):
         / "download.tmp"
     )
 
-    if temp_path.exists():
-
-        try:
-            temp_path.unlink()
-        except Exception:
-            pass
-
     # --------------------------------------------------------
     # 下載重試設定
     # --------------------------------------------------------
 
     max_retries = 3
 
-    # HTTP 連線逾時 30 秒
-    connect_timeout = 30
+    # TCP 連線最多等待 20 秒
+    connect_timeout = 20
 
-    # 如果已建立連線，但連續 60 秒沒有收到資料，就重試
-    read_timeout = 60
+    # 單次讀取若 30 秒沒有收到任何資料就中止
+    read_timeout = 30
 
-    # 進度至少每 5 秒顯示一次
+    # 整個 HTTP 請求最多允許 90 秒
+    hard_timeout = 90
+
+    # 失敗後等待 3～5 分鐘再重試
+    retry_wait_min = 180
+    retry_wait_max = 300
+
+    # 下載進度至少每 5 秒顯示一次
     progress_interval = 5
 
     for attempt in range(
@@ -653,9 +661,15 @@ def download_apk(apk_url):
 
         print()
         print(
-            f"📥 APK 下載 "
-            f"{attempt}/{max_retries}"
+            f"📥 APK 下載 {attempt}/{max_retries}",
+            flush=True,
         )
+
+        if temp_path.exists():
+            try:
+                temp_path.unlink()
+            except Exception:
+                pass
 
         try:
 
@@ -672,144 +686,209 @@ def download_apk(apk_url):
                     "https://slsstm2.dmpdmp.com/"
                 ),
                 "Accept": "*/*",
+                "Connection": "close",
             }
 
             start_time = time.monotonic()
 
-            with session.get(
-                apk_url,
-                headers=headers,
-                stream=True,
-                timeout=(
-                    connect_timeout,
-                    read_timeout,
-                ),
-                allow_redirects=True,
-            ) as response:
+            print(
+                "🌐 開始建立 APK HTTP 連線...",
+                flush=True,
+            )
+            print(
+                f"⏱️ 連線逾時：{connect_timeout} 秒",
+                flush=True,
+            )
+            print(
+                f"⏱️ 讀取逾時：{read_timeout} 秒",
+                flush=True,
+            )
+            print(
+                f"⏱️ 整體 HTTP 最長時間：{hard_timeout} 秒",
+                flush=True,
+            )
 
-                print(
-                    f"HTTP : "
-                    f"{response.status_code}"
+            # requests 沒有「整個請求」的 timeout，
+            # 因此用 signal 在 Linux/GitHub Actions 上加一道硬限制。
+            import signal
+
+            previous_alarm = None
+            signal_enabled = False
+
+            def _hard_timeout(signum, frame):
+                raise TimeoutError(
+                    f"HTTP 整體請求超過 {hard_timeout} 秒"
                 )
 
-                print(
-                    "Type : "
-                    f"{response.headers.get('Content-Type')}"
-                )
+            try:
+                if hasattr(signal, "SIGALRM"):
+                    previous_alarm = signal.signal(
+                        signal.SIGALRM,
+                        _hard_timeout,
+                    )
+                    signal.setitimer(
+                        signal.ITIMER_REAL,
+                        hard_timeout,
+                    )
+                    signal_enabled = True
 
-                print(
-                    "Length: "
-                    f"{response.headers.get('Content-Length')}"
-                )
+                with session.get(
+                    apk_url,
+                    headers=headers,
+                    stream=True,
+                    timeout=(
+                        connect_timeout,
+                        read_timeout,
+                    ),
+                    allow_redirects=True,
+                ) as response:
 
-                print(
-                    "Final URL: "
-                    f"{response.url[:200]}"
-                )
+                    print(
+                        "✅ HTTP Response 已收到",
+                        flush=True,
+                    )
 
-                response.raise_for_status()
+                    print(
+                        f"HTTP : {response.status_code}",
+                        flush=True,
+                    )
 
-                total = response.headers.get(
-                    "Content-Length"
-                )
+                    print(
+                        "Type : "
+                        f"{response.headers.get('Content-Type')}",
+                        flush=True,
+                    )
 
-                if total:
-                    try:
-                        total = int(total)
-                    except ValueError:
+                    print(
+                        "Length: "
+                        f"{response.headers.get('Content-Length')}",
+                        flush=True,
+                    )
+
+                    print(
+                        "Final URL: "
+                        f"{response.url[:200]}",
+                        flush=True,
+                    )
+
+                    response.raise_for_status()
+
+                    total = response.headers.get(
+                        "Content-Length"
+                    )
+
+                    if total:
+                        try:
+                            total = int(total)
+                        except ValueError:
+                            total = None
+                    else:
                         total = None
-                else:
-                    total = None
 
-                downloaded = 0
-                last_report_time = start_time
-                last_report_bytes = 0
+                    downloaded = 0
+                    last_report_time = start_time
+                    last_report_bytes = 0
 
-                with open(
-                    temp_path,
-                    "wb",
-                ) as f:
+                    with open(
+                        temp_path,
+                        "wb",
+                    ) as f:
 
-                    for chunk in response.iter_content(
-                        chunk_size=1024 * 1024
-                    ):
+                        for chunk in response.iter_content(
+                            chunk_size=1024 * 1024
+                        ):
 
-                        if not chunk:
-                            continue
+                            if not chunk:
+                                continue
 
-                        f.write(chunk)
-                        downloaded += len(chunk)
+                            f.write(chunk)
+                            downloaded += len(chunk)
 
-                        now = time.monotonic()
+                            now = time.monotonic()
 
-                        # 每 1 MB 或至少每 5 秒顯示一次
-                        should_report = (
-                            downloaded
-                            - last_report_bytes
-                            >= 1024 * 1024
-                            or
-                            now
-                            - last_report_time
-                            >= progress_interval
-                        )
-
-                        if should_report:
-
-                            elapsed = max(
-                                now - start_time,
-                                0.001,
-                            )
-
-                            speed = (
+                            should_report = (
                                 downloaded
-                                / 1024
-                                / 1024
-                                / elapsed
+                                - last_report_bytes
+                                >= 1024 * 1024
+                                or
+                                now
+                                - last_report_time
+                                >= progress_interval
                             )
 
-                            mb = (
-                                downloaded
-                                / 1024
-                                / 1024
-                            )
+                            if should_report:
 
-                            if total:
-
-                                total_mb = (
-                                    total
-                                    / 1024
-                                    / 1024
+                                elapsed = max(
+                                    now - start_time,
+                                    0.001,
                                 )
 
-                                percent = (
+                                speed = (
                                     downloaded
-                                    / total
-                                    * 100
+                                    / 1024
+                                    / 1024
+                                    / elapsed
                                 )
 
-                                print(
-                                    f"📦 "
-                                    f"{mb:.2f} / "
-                                    f"{total_mb:.2f} MB "
-                                    f"({percent:.1f}%) "
-                                    f"速度 {speed:.2f} MB/s"
+                                mb = (
+                                    downloaded
+                                    / 1024
+                                    / 1024
                                 )
 
-                            else:
+                                if total:
 
-                                print(
-                                    f"📦 "
-                                    f"{mb:.2f} MB "
-                                    f"速度 {speed:.2f} MB/s"
-                                )
+                                    total_mb = (
+                                        total
+                                        / 1024
+                                        / 1024
+                                    )
 
-                            last_report_time = now
-                            last_report_bytes = downloaded
+                                    percent = (
+                                        downloaded
+                                        / total
+                                        * 100
+                                    )
+
+                                    print(
+                                        f"📦 {mb:.2f} / "
+                                        f"{total_mb:.2f} MB "
+                                        f"({percent:.1f}%) "
+                                        f"速度 {speed:.2f} MB/s",
+                                        flush=True,
+                                    )
+
+                                else:
+
+                                    print(
+                                        f"📦 {mb:.2f} MB "
+                                        f"速度 {speed:.2f} MB/s",
+                                        flush=True,
+                                    )
+
+                                last_report_time = now
+                                last_report_bytes = downloaded
+
+            finally:
+                if signal_enabled:
+                    signal.setitimer(
+                        signal.ITIMER_REAL,
+                        0,
+                    )
+                    signal.signal(
+                        signal.SIGALRM,
+                        previous_alarm,
+                    )
 
             elapsed = max(
                 time.monotonic() - start_time,
                 0.001,
             )
+
+            if not temp_path.exists():
+                raise RuntimeError(
+                    "HTTP 請求完成，但沒有產生 APK 檔案"
+                )
 
             file_size = temp_path.stat().st_size
 
@@ -823,21 +902,23 @@ def download_apk(apk_url):
             print()
             print(
                 f"📦 下載完成："
-                f"{file_size / 1024 / 1024:.2f} MB"
+                f"{file_size / 1024 / 1024:.2f} MB",
+                flush=True,
             )
 
             print(
                 f"⏱️ 下載時間："
-                f"{elapsed:.1f} 秒"
+                f"{elapsed:.1f} 秒",
+                flush=True,
             )
 
             print(
                 f"🚀 平均速度："
-                f"{avg_speed:.2f} MB/s"
+                f"{avg_speed:.2f} MB/s",
+                flush=True,
             )
 
             if file_size == 0:
-
                 raise RuntimeError(
                     "下載檔案大小為 0"
                 )
@@ -850,21 +931,21 @@ def download_apk(apk_url):
                 temp_path,
                 "rb",
             ) as f:
-
                 magic = f.read(4)
 
             print(
-                f"APK Magic：{magic!r}"
+                f"APK Magic：{magic!r}",
+                flush=True,
             )
 
             if magic != b"PK\x03\x04":
-
                 raise RuntimeError(
                     "下載內容不是有效 APK/ZIP"
                 )
 
             print(
-                "✅ APK Magic 正確"
+                "✅ APK Magic 正確",
+                flush=True,
             )
 
             # ------------------------------------------------
@@ -872,7 +953,6 @@ def download_apk(apk_url):
             # ------------------------------------------------
 
             if APK_PATH.exists():
-
                 try:
                     APK_PATH.unlink()
                 except Exception:
@@ -885,21 +965,31 @@ def download_apk(apk_url):
             print()
             print(
                 f"✅ APK 已保存："
-                f"{APK_PATH}"
+                f"{APK_PATH}",
+                flush=True,
             )
 
             return APK_PATH
 
         except Exception as e:
 
+            elapsed = max(
+                time.monotonic() - start_time,
+                0.001,
+            )
+
             print()
             print(
-                f"❌ APK 下載失敗："
-                f"{type(e).__name__}: {e}"
+                f"❌ APK HTTP/下載失敗："
+                f"{type(e).__name__}: {e}",
+                flush=True,
+            )
+            print(
+                f"⏱️ 本次嘗試耗時：{elapsed:.1f} 秒",
+                flush=True,
             )
 
             if temp_path.exists():
-
                 try:
                     temp_path.unlink()
                 except Exception:
@@ -907,15 +997,39 @@ def download_apk(apk_url):
 
             if attempt < max_retries:
 
-                print()
-                print(
-                    "⏳ 5 秒後重試..."
+                wait_seconds = random.randint(
+                    retry_wait_min,
+                    retry_wait_max,
                 )
 
-                time.sleep(5)
+                print()
+                print(
+                    f"⏳ {wait_seconds // 60} 分"
+                    f" {wait_seconds % 60} 秒後重試...",
+                    flush=True,
+                )
+
+                # 每 30 秒顯示一次等待進度
+                remaining = wait_seconds
+
+                while remaining > 0:
+
+                    sleep_for = min(
+                        30,
+                        remaining,
+                    )
+
+                    time.sleep(sleep_for)
+                    remaining -= sleep_for
+
+                    if remaining > 0:
+                        print(
+                            f"⏳ 尚餘約 {remaining // 60} 分"
+                            f" {remaining % 60} 秒...",
+                            flush=True,
+                        )
 
             else:
-
                 raise
 
 
