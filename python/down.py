@@ -29,11 +29,11 @@ DOWNLOAD_DIR = Path.cwd() / "downloads"
 APK_PATH = DOWNLOAD_DIR / "球球英雄脚本.apk"
 
 # dmpdmp 最多重試次數
-BROWSER_RETRIES = 3
+BROWSER_RETRIES = 2
 
 # 等待網頁元素
-PAGE_LOAD_TIMEOUT = 5000
-ELEMENT_TIMEOUT = 5000
+PAGE_LOAD_TIMEOUT = 30000
+ELEMENT_TIMEOUT = 120000
 
 # ============================================================
 # Cloudflare R2
@@ -628,6 +628,53 @@ def get_verified_apk_url(download_url):
 
 
 # ============================================================
+# 執行環境清理
+# ============================================================
+
+def cleanup_runtime():
+    print()
+    print("=" * 60)
+    print("🧹 清理執行環境")
+    print("=" * 60)
+
+    import gc
+    import subprocess
+
+    try:
+        gc.collect()
+        print("✅ Python GC 已執行")
+    except Exception as e:
+        print(f"⚠️ Python GC 清理失敗：{e}")
+
+    # GitHub Actions Linux Runner 上，確認 Chromium/Chrome 沒有殘留。
+    # 不碰其他系統程序。
+    for process_name in ("chromium", "chromium-headless-shell"):
+        try:
+            subprocess.run(
+                ["pkill", "-9", "-f", process_name],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
+        except Exception:
+            pass
+
+    print("✅ Chromium 殘留程序檢查完成")
+
+    # 清除本次下載可能留下的暫存檔。
+    if DOWNLOAD_DIR.exists():
+        for pattern in ("*.tmp", "*.part", "*.crdownload"):
+            for file in DOWNLOAD_DIR.glob(pattern):
+                try:
+                    file.unlink()
+                    print(f"🗑️ 清除暫存：{file}")
+                except Exception as e:
+                    print(f"⚠️ 無法清除暫存：{file} - {e}")
+
+    print("✅ 執行環境清理完成")
+
+
+# ============================================================
 # 下載真正 APK
 # ============================================================
 def download_apk(apk_url, referer=None):
@@ -692,9 +739,9 @@ def download_apk(apk_url, referer=None):
                 apk_url,
                 headers=headers,
                 stream=True,
-                # 15 秒建立連線；連線建立後 30 秒內沒有收到任何資料
+                # 5 秒建立連線；連線建立後 5 秒內沒有收到任何資料
                 # 就會觸發 ReadTimeout。
-                timeout=(15, 30),
+                timeout=(5, 5),
                 allow_redirects=True,
             ) as response:
 
@@ -826,7 +873,7 @@ def download_apk(apk_url, referer=None):
 
         except requests.exceptions.ReadTimeout as e:
             print()
-            print("⏱️ 連續 30 秒沒有收到資料")
+            print("⏱️ 連續 5 秒沒有收到資料")
             print(f"⚠️ ReadTimeout：{e}")
 
             if temp_path.exists():
@@ -843,7 +890,7 @@ def download_apk(apk_url, referer=None):
 
         except requests.exceptions.ConnectTimeout as e:
             print()
-            print("⏱️ 建立下載連線超過 15 秒")
+            print("⏱️ 建立下載連線超過 5 秒")
             print(f"⚠️ ConnectTimeout：{e}")
 
             if temp_path.exists():
