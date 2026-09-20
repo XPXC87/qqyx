@@ -543,67 +543,30 @@ def cleanup():
 # =========================================================
 
 def main():
-
-    WORK_DIR.mkdir(
-        parents=True,
-        exist_ok=True
-    )
-
-    DOWNLOAD_DIR.mkdir(
-        parents=True,
-        exist_ok=True
-    )
-
-    apk = None
+    apk_path = None
 
     try:
-
-        log("==============================")
-        log("QQYX APK 自動同步開始")
-        log("==============================")
-
-        # 1
-        download_url = get_download_url()
-
-        # 2
-        apk = browser_download(
-            download_url
-        )
-
-        if not apk:
-            raise RuntimeError(
-                "沒有取得 APK"
-            )
-
-        # 3
-        if not is_apk(apk):
-            raise RuntimeError(
-                "下載結果不是有效 APK"
-            )
-
-        # 4
-        upload_r2(apk)
-
-        log("==============================")
-        log("APK 同步成功")
-        log("==============================")
-
-        return 0
+        # 你的主要下載流程
+        # 取得 9997 URL
+        # Playwright 開啟頁面
+        # 等待 APK
+        # 上傳 R2
+        pass
 
     except Exception as e:
-
-        error("==============================")
-        error("APK 同步失敗")
-        error(str(e))
-        error("==============================")
-
-        return 1
+        print(f"❌ 執行失敗: {e}")
+        raise
 
     finally:
-
-        # 不論成功或失敗都清理
-        cleanup()
+        # 不管成功或失敗都清理 APK
+        if apk_path:
+            try:
+                if os.path.exists(apk_path):
+                    os.remove(apk_path)
+                    print(f"🗑️ 已刪除本地 APK: {apk_path}")
+            except Exception as e:
+                print(f"⚠️ 刪除 APK 失敗: {e}")
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
