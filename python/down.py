@@ -32,8 +32,8 @@ APK_PATH = DOWNLOAD_DIR / "球球英雄脚本.apk"
 BROWSER_RETRIES = 3
 
 # 等待網頁元素
-PAGE_LOAD_TIMEOUT = 30000
-ELEMENT_TIMEOUT = 120000
+PAGE_LOAD_TIMEOUT = 5000
+ELEMENT_TIMEOUT = 15000
 
 # ============================================================
 # Cloudflare R2
@@ -100,27 +100,6 @@ def check_r2_config():
     print("✅ R2 Secrets 已設定")
     print(f"🪣 Bucket：{R2_BUCKET}")
     print(f"📄 Object：{R2_OBJECT}")
-
-
-# ============================================================
-# 清理舊檔
-# ============================================================
-
-def prepare_download_dir():
-    DOWNLOAD_DIR.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    for file in DOWNLOAD_DIR.glob("*.apk"):
-        try:
-            file.unlink()
-            print(f"🗑️ 清除舊 APK：{file}")
-        except Exception as e:
-            print(
-                f"⚠️ 無法刪除舊 APK："
-                f"{file} - {e}"
-            )
 
 
 # ============================================================
