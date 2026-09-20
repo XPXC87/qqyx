@@ -389,11 +389,6 @@ def browser_download(url):
             except Exception:
                 time.sleep(2)
 
-        finally:
-
-            context.close()
-            browser.close()
-
     raise RuntimeError(
         "瀏覽器流程結束，但沒有取得有效 APK。"
         "如果頁面要求 CAPTCHA/人工驗證，"
