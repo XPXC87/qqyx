@@ -33,7 +33,7 @@ jobs:
 
       - name: 執行下載
         run: |
-          python3 down.py
+          python -n down.py
 
       - name: 清理殘留APK
         if: always()
