@@ -330,7 +330,6 @@ def get_apk_href(page):
 
     return href
 
-
 # ============================================================
 # Chromium 正常驗證
 # ============================================================
@@ -369,16 +368,12 @@ def get_verified_apk_url(download_url):
         ):
 
             print()
-            print(
-                "=" * 60
-            )
+            print("=" * 60)
             print(
                 f"🌐 dmpdmp 第 "
                 f"{attempt}/{BROWSER_RETRIES} 次嘗試"
             )
-            print(
-                "=" * 60
-            )
+            print("=" * 60)
 
             try:
 
@@ -410,15 +405,9 @@ def get_verified_apk_url(download_url):
                     pass
 
                 print()
-                print(
-                    "=" * 60
-                )
-                print(
-                    "⑤ 等待「验证并下载」"
-                )
-                print(
-                    "=" * 60
-                )
+                print("=" * 60)
+                print("⑤ 等待「验证并下载」")
+                print("=" * 60)
 
                 sub_button = page.locator(
                     "#sub"
@@ -477,9 +466,6 @@ def get_verified_apk_url(download_url):
                 )
 
                 if attempt < BROWSER_RETRIES:
-                    try:
-                    except Exception:
-                        pass
 
                     print()
                     print(
@@ -496,9 +482,6 @@ def get_verified_apk_url(download_url):
                     page = context.new_page()
 
                 else:
-
-                    except Exception:
-                        pass
 
                     browser.close()
 
