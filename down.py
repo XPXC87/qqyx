@@ -632,10 +632,19 @@ def download_apk(apk_url):
             pass
 
     # --------------------------------------------------------
-    # 第一次嘗試
+    # 下載重試設定
     # --------------------------------------------------------
 
     max_retries = 3
+
+    # HTTP 連線逾時 30 秒
+    connect_timeout = 30
+
+    # 如果已建立連線，但連續 60 秒沒有收到資料，就重試
+    read_timeout = 60
+
+    # 進度至少每 5 秒顯示一次
+    progress_interval = 5
 
     for attempt in range(
         1,
@@ -665,13 +674,15 @@ def download_apk(apk_url):
                 "Accept": "*/*",
             }
 
+            start_time = time.monotonic()
+
             with session.get(
                 apk_url,
                 headers=headers,
                 stream=True,
                 timeout=(
-                    30,
-                    DOWNLOAD_TIMEOUT,
+                    connect_timeout,
+                    read_timeout,
                 ),
                 allow_redirects=True,
             ) as response:
@@ -691,6 +702,11 @@ def download_apk(apk_url):
                     f"{response.headers.get('Content-Length')}"
                 )
 
+                print(
+                    "Final URL: "
+                    f"{response.url[:200]}"
+                )
+
                 response.raise_for_status()
 
                 total = response.headers.get(
@@ -698,12 +714,16 @@ def download_apk(apk_url):
                 )
 
                 if total:
-                    total = int(total)
+                    try:
+                        total = int(total)
+                    except ValueError:
+                        total = None
                 else:
                     total = None
 
                 downloaded = 0
-                last_report = 0
+                last_report_time = start_time
+                last_report_bytes = 0
 
                 with open(
                     temp_path,
@@ -718,20 +738,33 @@ def download_apk(apk_url):
                             continue
 
                         f.write(chunk)
+                        downloaded += len(chunk)
 
-                        downloaded += len(
-                            chunk
+                        now = time.monotonic()
+
+                        # 每 1 MB 或至少每 5 秒顯示一次
+                        should_report = (
+                            downloaded
+                            - last_report_bytes
+                            >= 1024 * 1024
+                            or
+                            now
+                            - last_report_time
+                            >= progress_interval
                         )
 
-                        # 每 5 MB 或最後顯示一次
-                        if (
-                            downloaded
-                            - last_report
-                            >= 5 * 1024 * 1024
-                        ):
+                        if should_report:
 
-                            last_report = (
+                            elapsed = max(
+                                now - start_time,
+                                0.001,
+                            )
+
+                            speed = (
                                 downloaded
+                                / 1024
+                                / 1024
+                                / elapsed
                             )
 
                             mb = (
@@ -756,24 +789,51 @@ def download_apk(apk_url):
 
                                 print(
                                     f"📦 "
-                                    f"{mb:.2f} MB / "
+                                    f"{mb:.2f} / "
                                     f"{total_mb:.2f} MB "
-                                    f"({percent:.1f}%)"
+                                    f"({percent:.1f}%) "
+                                    f"速度 {speed:.2f} MB/s"
                                 )
 
                             else:
 
                                 print(
                                     f"📦 "
-                                    f"{mb:.2f} MB"
+                                    f"{mb:.2f} MB "
+                                    f"速度 {speed:.2f} MB/s"
                                 )
 
+                            last_report_time = now
+                            last_report_bytes = downloaded
+
+            elapsed = max(
+                time.monotonic() - start_time,
+                0.001,
+            )
+
             file_size = temp_path.stat().st_size
+
+            avg_speed = (
+                file_size
+                / 1024
+                / 1024
+                / elapsed
+            )
 
             print()
             print(
                 f"📦 下載完成："
                 f"{file_size / 1024 / 1024:.2f} MB"
+            )
+
+            print(
+                f"⏱️ 下載時間："
+                f"{elapsed:.1f} 秒"
+            )
+
+            print(
+                f"🚀 平均速度："
+                f"{avg_speed:.2f} MB/s"
             )
 
             if file_size == 0:
@@ -847,6 +907,7 @@ def download_apk(apk_url):
 
             if attempt < max_retries:
 
+                print()
                 print(
                     "⏳ 5 秒後重試..."
                 )
