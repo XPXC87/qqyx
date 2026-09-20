@@ -1,10 +1,10 @@
 name: 腳本自動同步
 
 on:
-  workflow_dispatch: # 保留手動觸發
+  workflow_dispatch:
   schedule:
     # 提示：GitHub Actions 的定時任務在尖峰時間常有延遲
-    - cron: "*/5 * * * *" 
+    - cron: "*/10 * * * *" 
 
 jobs:
   sync:
@@ -17,13 +17,13 @@ jobs:
 
     steps:
       - name: 檢查
-        uses: actions/checkout@v4 # 截至目前穩定生產版本建議先用 v4，若你要使用最新的 v6 請確保有對應需求
+        uses: actions/checkout@v4
 
       - name: 初始化 Python
-        uses: actions/setup-python@v5 # 穩定生產版本建議先用 v5
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: 'pip' # 💡 新增：自動快取 pip 依賴，加速每次執行的速度，節省 Actions 額度
+          cache: 'pip'
 
       - name: 安裝運行庫
         run: |
@@ -32,7 +32,6 @@ jobs:
 
       - name: 安裝 Chromium
         run: |
-          # 💡 建議只安裝 chromium 瀏覽器本身即可，不需要重複下載其他瀏覽器
           python -m playwright install chromium --with-deps
 
       - name: 執行下載
@@ -40,9 +39,8 @@ jobs:
           python down.py
 
       - name: 清理殘留檔案
-        if: always() # 確保無論成功或失敗都會執行清理
+        if: always()
         run: |
-          # 💡 使用 -f 參數，就算檔案不存在也不會報錯導致工作流亮紅燈
           rm -f "球球英雄脚本.apk"
           rm -f *.apk
           rm -f *.crdownload
