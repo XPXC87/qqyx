@@ -477,7 +477,7 @@ def get_verified_apk_url(download_url):
                 )
 
                 if attempt < BROWSER_RETRIES:
-                
+                    try:
                     except Exception:
                         pass
 
