@@ -592,54 +592,6 @@ def get_verified_apk_url(download_url):
 
                     raise
 
-
-# ============================================================
-# 執行環境清理
-# ============================================================
-
-def cleanup_runtime():
-    print()
-    print("=" * 60)
-    print("🧹 清理執行環境")
-    print("=" * 60)
-
-    import gc
-    import subprocess
-
-    try:
-        gc.collect()
-        print("✅ Python GC 已執行")
-    except Exception as e:
-        print(f"⚠️ Python GC 清理失敗：{e}")
-
-    # GitHub Actions Linux Runner 上，確認 Chromium/Chrome 沒有殘留。
-    # 不碰其他系統程序。
-    for process_name in ("chromium", "chromium-headless-shell"):
-        try:
-            subprocess.run(
-                ["pkill", "-9", "-f", process_name],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            )
-        except Exception:
-            pass
-
-    print("✅ Chromium 殘留程序檢查完成")
-
-    # 清除本次下載可能留下的暫存檔。
-    if DOWNLOAD_DIR.exists():
-        for pattern in ("*.tmp", "*.part", "*.crdownload"):
-            for file in DOWNLOAD_DIR.glob(pattern):
-                try:
-                    file.unlink()
-                    print(f"🗑️ 清除暫存：{file}")
-                except Exception as e:
-                    print(f"⚠️ 無法清除暫存：{file} - {e}")
-
-    print("✅ 執行環境清理完成")
-
-
 # ============================================================
 # 下載真正 APK
 # ============================================================
