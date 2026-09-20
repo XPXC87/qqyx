@@ -306,6 +306,7 @@ def browser_download(download_url):
             print(f"⚠️ page.goto 發生錯誤：{e}")
 
         print()
+print()
 print("目前頁面：")
 print(page.url)
 
@@ -371,24 +372,24 @@ except Exception as e:
 # 等待網頁自己觸發下載
 # ----------------------------------------------------
 
-        print()
-        print("⏳ 等待驗證完成並觸發下載...")
+print()
+print("⏳ 等待驗證完成並觸發下載...")
 
-        for i in range(DOWNLOAD_TIMEOUT):
+for i in range(DOWNLOAD_TIMEOUT):
 
-            if state["download"] is not None:
-                break
+    if state["download"] is not None:
+        break
 
-            if i % 10 == 0:
-                print(
-                    f"⏳ 等待下載... "
-                    f"{i}/{DOWNLOAD_TIMEOUT} 秒"
-                )
+    if i % 10 == 0:
+        print(
+            f"⏳ 等待下載... "
+            f"{i}/{DOWNLOAD_TIMEOUT} 秒"
+        )
 
-            try:
-                page.wait_for_timeout(1000)
-            except Exception:
-                break
+    try:
+        page.wait_for_timeout(1000)
+    except Exception:
+        break
 
         # ----------------------------------------------------
         # 沒有下載
