@@ -2,8 +2,6 @@ name: 腳本自動同步
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "*/20 * * * *"
 
 concurrency:
   group: qqyx-sync
