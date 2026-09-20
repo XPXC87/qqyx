@@ -29,7 +29,7 @@ DOWNLOAD_DIR = Path.cwd() / "downloads"
 APK_PATH = DOWNLOAD_DIR / "球球英雄脚本.apk"
 
 # dmpdmp 最多重試次數
-BROWSER_RETRIES = 2
+BROWSER_RETRIES = 3
 
 # 等待網頁元素
 PAGE_LOAD_TIMEOUT = 30000
@@ -503,7 +503,7 @@ def get_verified_apk_url(download_url):
                     page.goto(
                         download_url,
                         wait_until="commit",
-                        timeout=30000,
+                        timeout=5000,
                     )
 
                 except PlaywrightTimeoutError:
@@ -600,10 +600,10 @@ def get_verified_apk_url(download_url):
 
                     print()
                     print(
-                        "⏳ 5 秒後重新嘗試..."
+                        "⏳ 3 秒後重新嘗試..."
                     )
 
-                    time.sleep(5)
+                    time.sleep(3)
 
                     try:
                         page.close()
@@ -704,13 +704,11 @@ def download_apk(apk_url, referer=None):
                 f"無法清除舊暫存檔：{temp_path} - {e}"
             )
 
-    max_retries = 3
+    max_retries = 5
 
     for attempt in range(1, max_retries + 1):
         print()
         print(f"📥 APK 下載 {attempt}/{max_retries}")
-        print("🔒 本次流程只建立一個 APK HTTP GET 連線")
-        print("🔌 正在建立下載連線...")
 
         try:
             headers = {
