@@ -873,65 +873,6 @@ def upload_to_r2(apk_path):
         f"📄 Object：{R2_OBJECT}"
     )
 
-
-# ============================================================
-# 清理
-# ============================================================
-
-def cleanup():
-
-    print()
-    print("=" * 60)
-    print("⑨ 清理本地檔案")
-    print("=" * 60)
-
-    if APK_PATH.exists():
-
-        try:
-
-            APK_PATH.unlink()
-
-            print(
-                f"🗑️ 已刪除："
-                f"{APK_PATH}"
-            )
-
-        except Exception as e:
-
-            print(
-                f"⚠️ APK 刪除失敗："
-                f"{e}"
-            )
-
-    else:
-
-        print(
-            "ℹ️ 沒有主要 APK"
-        )
-
-    if DOWNLOAD_DIR.exists():
-
-        for file in DOWNLOAD_DIR.iterdir():
-
-            try:
-
-                if file.is_file():
-
-                    file.unlink()
-
-                    print(
-                        f"🗑️ 已刪除："
-                        f"{file}"
-                    )
-
-            except Exception as e:
-
-                print(
-                    f"⚠️ 無法刪除："
-                    f"{file} - {e}"
-                )
-
-
 # ============================================================
 # Main
 # ============================================================
