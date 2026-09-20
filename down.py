@@ -306,12 +306,73 @@ def browser_download(download_url):
             print(f"⚠️ page.goto 發生錯誤：{e}")
 
         print()
-        print("目前頁面：")
-        print(page.url)
+print("目前頁面：")
+print(page.url)
 
-        # ----------------------------------------------------
-        # 等待正常網頁 JavaScript 執行
-        # ----------------------------------------------------
+# ----------------------------------------------------
+# 找到「驗證並下載」按鈕
+# ----------------------------------------------------
+
+print()
+print("🔎 尋找「验证并下载」按鈕...")
+
+try:
+    button = page.locator("#sub")
+
+    button.wait_for(
+        state="visible",
+        timeout=30000
+    )
+
+    print("✅ 找到驗證並下載按鈕")
+
+    # 取得按鈕附近的文字
+    try:
+        print(
+            "按鈕文字：",
+            button.inner_text()
+        )
+    except Exception:
+        pass
+
+    print("🖱️ 正常點擊「验证并下载」...")
+
+    button.click()
+
+    print("✅ 已點擊")
+
+except Exception as e:
+    print(f"❌ 找不到或無法點擊驗證按鈕：{e}")
+
+    try:
+        html_path = Path.cwd() / "debug_button.html"
+        screenshot_path = Path.cwd() / "debug_button.png"
+
+        html_path.write_text(
+            page.content(),
+            encoding="utf-8"
+        )
+
+        page.screenshot(
+            path=str(screenshot_path),
+            full_page=True
+        )
+
+        print(f"📄 HTML：{html_path}")
+        print(f"📸 Screenshot：{screenshot_path}")
+
+    except Exception as debug_error:
+        print(f"⚠️ 保存診斷資料失敗：{debug_error}")
+
+    raise
+
+
+# ----------------------------------------------------
+# 等待網頁自己觸發下載
+# ----------------------------------------------------
+
+        print()
+        print("⏳ 等待驗證完成並觸發下載...")
 
         for i in range(DOWNLOAD_TIMEOUT):
 
@@ -320,7 +381,7 @@ def browser_download(download_url):
 
             if i % 10 == 0:
                 print(
-                    f"⏳ 等待瀏覽器正常下載... "
+                    f"⏳ 等待下載... "
                     f"{i}/{DOWNLOAD_TIMEOUT} 秒"
                 )
 
