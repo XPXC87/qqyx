@@ -59,11 +59,6 @@ def download_apk(apk_url, referer=None):
         try:
             # 如果知道產生 APK 連結的頁面，就使用真正的頁面作為 Referer。
             # 不再使用固定的 slsstm2.dmpdmp.com，避免 Referer 不匹配。
-            if referer:
-
-            request_started = time.monotonic()
-
-            print("⏳ 等待伺服器回應...")
 
             with session.get(
                 apk_url,
