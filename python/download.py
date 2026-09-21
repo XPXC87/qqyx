@@ -28,14 +28,6 @@ R2_ENDPOINT = (
 )
 
 session = requests.Session()
-session.headers.update({
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-        " AppleWebKit/537.36"
-        " Chrome/124.0.0.0"
-    ),
-    "Accept": "*/*",
-})
 
 # ============================================================
 # 下載真正 APK
@@ -63,17 +55,6 @@ def download_apk(apk_url, referer=None):
         print()
         print(f"📥 APK 下載 {attempt}/{max_retries}")
 
-        try:
-            headers = {
-                "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-                    "AppleWebKit/537.36"
-                    "Chrome/124.0.0.0"
-                ),
-                "Accept": "*/*",
-                "Accept-Encoding": "identity",
-                "Connection": "close",
-            }
 
             # 如果知道產生 APK 連結的頁面，就使用真正的頁面作為 Referer。
             # 不再使用固定的 slsstm2.dmpdmp.com，避免 Referer 不匹配。
