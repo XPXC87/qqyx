@@ -817,7 +817,7 @@ def download_apk(apk_url, referer=None):
                 apk_url,
                 headers=headers,
                 stream=True,
-                timeout=(10, 10),
+                timeout=(5, 5),
                 allow_redirects=True,
             ) as response:
 
