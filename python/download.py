@@ -80,7 +80,7 @@ def download_apk(apk_url, referer=None):
             with session.get(
                 apk_url,
                 stream=True,
-                timeout=(10, 10),
+                timeout=(15, 15),
                 allow_redirects=True,
             ) as response:
 
@@ -220,7 +220,7 @@ def download_apk(apk_url, referer=None):
 
         except requests.exceptions.ConnectTimeout as e:
             print()
-            print("⏱️ 建立下載連線超過 10 秒")
+            print("⏱️ 建立下載連線超過 15 秒")
             print(f"⚠️ ConnectTimeout：{e}")
 
 
