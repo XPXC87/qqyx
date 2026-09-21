@@ -193,8 +193,6 @@ def download_apk(apk_url, referer=None):
                 with open(temp_path, "rb") as f:
                     magic = f.read(4)
 
-                print(f"APK Magic：{magic!r}")
-
                 if magic != b"PK\x03\x04":
                     raise RuntimeError(
                         "下載內容不是有效 APK/ZIP"
@@ -213,7 +211,7 @@ def download_apk(apk_url, referer=None):
                 temp_path.replace(APK_PATH)
 
                 print()
-                print(f"✅ APK 已保存：{APK_PATH}")
+                print(f"✅ APK 已保存")
 
                 return APK_PATH
 
@@ -281,10 +279,6 @@ def upload_to_r2(apk_path):
 
     print(
         f"📄 Object：{R2_OBJECT}"
-    )
-
-    print(
-        f"📦 本地檔案：{apk_path}"
     )
 
     if not R2_ENDPOINT:
