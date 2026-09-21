@@ -29,14 +29,6 @@ ELEMENT_TIMEOUT = 30000
 OUTPUT_FILE = Path.cwd() / "apk_url.txt"
 
 session = requests.Session()
-session.headers.update({
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-        " AppleWebKit/537.36"
-        " Chrome/124.0.0.0"
-    ),
-    "Accept": "*/*",
-})
 
 # ============================================================
 # 取得 5147 入口頁
@@ -389,11 +381,6 @@ def get_verified_apk_url(download_url):
 
         context = browser.new_context(
             accept_downloads=True,
-            user_agent=(
-                "Mozilla/5.0 (X11; Linux x86_64) "
-                "AppleWebKit/537.36"
-                "Chrome/124.0.0.0"
-            ),
             viewport={
                 "width": 1280,
                 "height": 900,
