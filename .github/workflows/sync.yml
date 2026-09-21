@@ -50,33 +50,6 @@ jobs:
 
 
       # ============================================================
-      # 4. 顯示目前 Cache 狀態
-      # ============================================================
-      - name: 檢查 Cache
-        run: |
-          echo "========================================"
-          echo "📦 Cache 狀態"
-          echo "========================================"
-
-          echo ""
-          echo "Python / Pip Cache："
-          python -m pip cache info || true
-
-          echo ""
-          echo "Chromium Cache："
-
-          if [ -d ~/.cache/ms-playwright ]; then
-            du -sh ~/.cache/ms-playwright || true
-
-            echo ""
-            echo "Chromium 目錄："
-            find ~/.cache/ms-playwright -maxdepth 2 -type d || true
-          else
-            echo "⚠️ Chromium Cache 不存在"
-          fi
-
-
-      # ============================================================
       # 5. 安裝 Python 運行庫
       # ============================================================
       - name: 安裝運行庫
