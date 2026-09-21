@@ -714,8 +714,6 @@ def main():
     print("🎉 解析完成")
     print("=" * 60)
     print(f"📄 URL 已寫入：{OUTPUT_FILE}")
-    print(f"🔗 APK URL：{apk_url}")
-
 
 if __name__ == "__main__":
     main()
