@@ -136,86 +136,26 @@ jobs:
 
 
       # ============================================================
-      # 9. 執行前清理
-      #
-      # 注意：
-      # 不清掉 Python Cache
-      # 不清掉 Chromium Cache
-      #
-      # 只清理真正不需要的暫存與舊下載。
+      # 設定 DNS：阿里雲公共 DNS
       # ============================================================
-      - name: 執行前清理
+      - name: 設定阿里雲 DNS
         run: |
           echo "========================================"
-          echo "🧹 執行前環境清理"
+          echo "🌐 設定 DNS"
           echo "========================================"
 
-          echo ""
-          echo "📊 清理前記憶體："
-          free -h
+          echo "📡 修改前 DNS："
+          resolvectl status 2>/dev/null || cat /etc/resolv.conf || true
+
+          sudo resolvectl dns "$(ip route | awk '/default/ {print $5; exit}')" 223.5.5.5 223.6.6.6 || true
 
           echo ""
-          echo "📊 清理前磁碟："
-          df -h
-
-          # 清理 APT 暫存
-          sudo apt-get clean
-          sudo apt-get autoclean
-
-          # 清理系統暫存
-          sudo rm -rf /tmp/*
-          sudo rm -rf /var/tmp/*
-
-          # 清理舊下載
-          rm -rf downloads
-          rm -f "球球英雄脚本.apk"
-          rm -f *.apk
-          rm -f *.tmp
-          rm -f *.part
-          rm -f *.crdownload
-
-          # 確保 filesystem buffers 寫入
-          sync
+          echo "📡 修改後 DNS："
+          resolvectl status 2>/dev/null || cat /etc/resolv.conf || true
 
           echo ""
-          echo "📊 清理後記憶體："
-          free -h
-
-          echo ""
-          echo "📊 清理後磁碟："
-          df -h
-
-          echo ""
-          echo "✅ 執行前清理完成"
-          echo "📦 Python Cache：保留"
-          echo "🌐 Chromium Cache：保留"
-
-
-      # ============================================================
-      # 10. 執行前 Python GC
-      # ============================================================
-      - name: Python GC
-        run: |
-          echo "========================================"
-          echo "🐍 Python Garbage Collection"
-          echo "========================================"
-
-          python - <<'PY'
-          import gc
-
-          collected = gc.collect()
-
-          print(f"✅ Python GC 完成")
-          print(f"♻️ 回收物件：{collected}")
-          PY
-
-          sync
-
-          echo ""
-          echo "📊 執行前記憶體："
-          free -h
-
-
+          echo "🔍 DNS 測試："
+          getent hosts dmpdmp.com || true
       # ============================================================
       # 11. 執行下載
       # ============================================================
