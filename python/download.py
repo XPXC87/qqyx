@@ -59,8 +59,8 @@ def download_apk(apk_url, referer=None):
         try:
             headers = {
                 "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 "
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+                    "AppleWebKit/537.36"
                     "Chrome/124.0.0.0"
                 ),
                 "Accept": "*/*",
@@ -79,7 +79,6 @@ def download_apk(apk_url, referer=None):
             
             with session.get(
                 apk_url,
-                headers=headers,
                 stream=True,
                 timeout=(15, 15),
                 allow_redirects=True,
@@ -210,7 +209,7 @@ def download_apk(apk_url, referer=None):
 
         except requests.exceptions.ReadTimeout as e:
             print()
-            print("⏱️ 連續 15 秒沒有收到資料")
+            print("⏱️ 連續 5 秒沒有收到資料")
             print(f"⚠️ ReadTimeout：{e}")
 
 
@@ -256,6 +255,119 @@ def download_apk(apk_url, referer=None):
 
 
 # ============================================================
+# 上傳 R2
+# ============================================================
+
+def upload_to_r2(apk_path):
+
+    print()
+    print("=" * 60)
+    print("⑧ 上傳 Cloudflare R2")
+    print("=" * 60)
+
+    print(
+        f"🪣 Bucket：{R2_BUCKET}"
+    )
+
+    print(
+        f"📄 Object：{R2_OBJECT}"
+    )
+
+    if not R2_ENDPOINT:
+
+        raise RuntimeError(
+            "R2_ENDPOINT 尚未設定"
+        )
+
+    s3 = boto3.client(
+        "s3",
+        endpoint_url=R2_ENDPOINT,
+        aws_access_key_id=(
+            R2_ACCESS_KEY_ID
+        ),
+        aws_secret_access_key=(
+            R2_SECRET_ACCESS_KEY
+        ),
+        region_name="auto",
+        config=Config(
+            signature_version="s3v4"
+        ),
+    )
+
+    print()
+    print("☁️ 開始上傳...")
+
+    s3.upload_file(
+        str(apk_path),
+        R2_BUCKET,
+        R2_OBJECT,
+        ExtraArgs={
+            "ContentType": (
+                "application/vnd.android."
+                "package-archive"
+            )
+        },
+    )
+
+    print()
+    print("🎉 R2 上傳成功！")
+
+    print(
+        f"🪣 Bucket：{R2_BUCKET}"
+    )
+
+    print(
+        f"📄 Object：{R2_OBJECT}"
+    )
+
+
+# ============================================================
+# Main
+# ============================================================
+
+def main():
+    print()
+    print("=" * 60)
+    print("📥 QQYX APK 下載 / R2 上傳")
+    print("=" * 60)
+
+    if not URL_FILE.exists():
+        raise RuntimeError(
+            f"找不到 {URL_FILE}，請先執行 parse.py"
+        )
+
+    apk_url = URL_FILE.read_text(encoding="utf-8").strip()
+
+    if not apk_url.startswith(("http://", "https://")):
+        raise RuntimeError(
+            f"apk_url.txt 內容不是有效 URL：{apk_url[:300]}"
+        )
+
+    print(f"🔗 讀取 APK URL：{apk_url}")
+
+    apk_path = download_apk(
+        apk_url,
+        referer=apk_url,
+    )
+
+    upload_to_r2(apk_path)
+
+    print()
+    print("=" * 60)
+    print("🎉 下載 + R2 上傳完成")
+    print("=" * 60)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        print()
+        print("=" * 60)
+        print("❌ 執行失敗")
+        print("=" * 60)
+        print(f"{type(e).__name__}: {e}")
+        sys.exit(1)# ============================================================
 # 上傳 R2
 # ============================================================
 
@@ -352,7 +464,7 @@ def main():
 
     apk_path = download_apk(
         apk_url,
-        referer=None,
+        referer=apk_url,
     )
 
     upload_to_r2(apk_path)
