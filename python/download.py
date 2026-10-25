@@ -322,52 +322,6 @@ def upload_to_r2(apk_path):
 
 
 # ============================================================
-# Main
-# ============================================================
-
-def main():
-    print()
-    print("=" * 60)
-    print("📥 QQYX APK 下載 / R2 上傳")
-    print("=" * 60)
-
-    if not URL_FILE.exists():
-        raise RuntimeError(
-            f"找不到 {URL_FILE}，請先執行 parse.py"
-        )
-
-    apk_url = URL_FILE.read_text(encoding="utf-8").strip()
-
-    if not apk_url.startswith(("http://", "https://")):
-        raise RuntimeError(
-            f"apk_url.txt 內容不是有效 URL：{apk_url[:300]}"
-        )
-
-    print(f"🔗 讀取 APK URL：{apk_url}")
-
-    apk_path = download_apk(
-        apk_url,
-        referer=apk_url,
-    )
-
-    upload_to_r2(apk_path)
-
-    print()
-    print("=" * 60)
-    print("🎉 下載 + R2 上傳完成")
-    print("=" * 60)
-
-
-if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        print()
-        print("=" * 60)
-        print("❌ 執行失敗")
-        print("=" * 60)
-        print(f"{type(e).__name__}: {e}")
-        sys.exit(1)# ============================================================
 # 上傳 R2
 # ============================================================
 
